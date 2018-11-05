@@ -1,6 +1,6 @@
 Package: multiview
 Type: Package
-Title: Methods for High-Dimensional Multi-View Learning
+Title: Methods for High-Dimensional Multi-View Learning (multiview)
 Version: 0.1.0
 Author: Wouter van Loon
 Maintainer: Wouter van Loon <w.s.van.loon@fsw.leidenuniv.nl>
