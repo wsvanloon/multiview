@@ -21,7 +21,27 @@
 #' @export
 #' @author Wouter van Loon <w.s.van.loon@fsw.leidenuniv.nl>
 #' @examples
-#' TBA
+#' set.seed(012)
+#' n <- 1000
+#' cors <- seq(0.1,0.7,0.1)
+#' X <- matrix(NA, nrow=n, ncol=length(cors)+1)
+#' X[,1] <- rnorm(n)
+#'
+#' for(i in 1:length(cors)){
+#'   X[,i+1] <- X[,1]*cors[i] + rnorm(n, 0, sqrt(1-cors[i]^2))
+#' }
+#'
+#' beta <- c(1,0,0,0,0,0,0,0)
+#' eta <- X %*% beta
+#' p <- exp(eta)/(1+exp(eta))
+#' y <- rbinom(n, 1, p)
+#' view_index <- rep(1:(ncol(X)/2), each=2)
+#'
+#' fit <- StaPLR(X, y, view_index)
+#' coef(fit$meta, s="lambda.min")
+#'
+#' new_X <- matrix(rnorm(16), nrow=2)
+#' predict(fit, new_X)
 
 StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, myseed = NA,
                       std.base = FALSE, std.meta = FALSE, ll1 = -Inf, ul1 = Inf,
@@ -102,7 +122,7 @@ StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, myseed = NA,
                        type.measure = cvloss, alpha = alpha1,
                        standardize = std.base, lower.limits = ll1,
                        upper.limits = ul1, parallel = cvparallel, lambda.min.ratio = lambda.ratio)
-      Z[folds == k,v] <- glmnet::predict.glmnet(cvf, newx = x[folds == k, view == v], s = cvlambda, type = metadat)
+      Z[folds == k,v] <- predict(cvf, newx = x[folds == k, view == v], s = cvlambda, type = metadat)
     } # 10fold cv
   } # domains
   cat("\n")
@@ -114,7 +134,7 @@ StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, myseed = NA,
                        upper.limits = ul2, parallel = cvparallel, lambda.min.ratio=lambda.ratio)
 
   # create output list
-  outlist = list(
+  out = list(
     "base" = cv.base,
     "meta" = cv.meta,
     "CVs" = Z,
@@ -123,9 +143,11 @@ StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, myseed = NA,
     "view" = view
   )
 
+  class(out) <- "StaPLR"
+
   # return output
   cat("DONE", "\n")
-  return(outlist)
+  return(out)
 }
 
 
@@ -143,8 +165,29 @@ StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, myseed = NA,
 #' @export
 #' @author Wouter van Loon <w.s.van.loon@fsw.leidenuniv.nl>
 #' @examples
-#' TBA
-predict.StaPLR = function(object, newx, metadat = "response", predtype = "response", cvlambda = "lambda.min"){
+#' set.seed(012)
+#' n <- 1000
+#' cors <- seq(0.1,0.7,0.1)
+#' X <- matrix(NA, nrow=n, ncol=length(cors)+1)
+#' X[,1] <- rnorm(n)
+#'
+#' for(i in 1:length(cors)){
+#'   X[,i+1] <- X[,1]*cors[i] + rnorm(n, 0, sqrt(1-cors[i]^2))
+#' }
+#'
+#' beta <- c(1,0,0,0,0,0,0,0)
+#' eta <- X %*% beta
+#' p <- exp(eta)/(1+exp(eta))
+#' y <- rbinom(n, 1, p)
+#' view_index <- rep(1:(ncol(X)/2), each=2)
+#'
+#' fit <- StaPLR(X, y, view_index)
+#' coef(fit$meta, s="lambda.min")
+#'
+#' new_X <- matrix(rnorm(16), nrow=2)
+#' predict(fit, new_X)
+
+predict.StaPLR <- function(object, newx, metadat = "response", predtype = "response", cvlambda = "lambda.min"){
   # prediction based on StaPLR
   # Input
   #   object: an output object from StaPLR
@@ -157,8 +200,8 @@ predict.StaPLR = function(object, newx, metadat = "response", predtype = "respon
   n <- nrow(newx)
   Z <- matrix(NA, n, V)
   for (v in 1:V){
-    Z[,v] <- glmnet::predict.glmnet(object$base[[v]], newx[, object$view == v, drop=FALSE], s = cvlambda, type = metadat)
+    Z[,v] <- predict(object$base[[v]], newx[, object$view == v, drop=FALSE], s = cvlambda, type = metadat)
   }
-  out <- glmnet::predict.glmnet(object$meta, Z, s = cvlambda, type = predtype)
+  out <- predict(object$meta, Z, s = cvlambda, type = predtype)
   return(out)
 }

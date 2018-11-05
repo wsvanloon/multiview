@@ -47,7 +47,27 @@ TBA.
 Fit a two-level stacked penalized logistic regression model with a single base-learner and a single meta-learner.
 }
 \examples{
-TBA
+set.seed(012)
+n <- 1000
+cors <- seq(0.1,0.7,0.1)
+X <- matrix(NA, nrow=n, ncol=length(cors)+1)
+X[,1] <- rnorm(n)
+
+for(i in 1:length(cors)){
+  X[,i+1] <- X[,1]*cors[i] + rnorm(n, 0, sqrt(1-cors[i]^2))
+}
+
+beta <- c(1,0,0,0,0,0,0,0)
+eta <- X \%*\% beta
+p <- exp(eta)/(1+exp(eta))
+y <- rbinom(n, 1, p)
+view_index <- rep(1:(ncol(X)/2), each=2)
+
+fit <- StaPLR(X, y, view_index)
+coef(fit$meta, s="lambda.min")
+
+new_X <- matrix(rnorm(16), nrow=2)
+predict(fit, new_X)
 }
 \author{
 Wouter van Loon <w.s.van.loon@fsw.leidenuniv.nl>
