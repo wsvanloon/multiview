@@ -99,7 +99,7 @@ StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, myseed = NA,
   V <- length(unique(view))
   n <- length(y)
   Z <- matrix(NA, n, V)
-  folds <- caret::createFolds(y, nfolds, list = FALSE)
+  folds <- kFolds(y, nfolds)
   cv.base <- vector("list", V)
 
   # STEP 0: fit glmnet on each of the domains
