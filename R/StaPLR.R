@@ -8,14 +8,17 @@
 #' @param alpha2 (meta) alpha parameter for glmnet: lasso(1) / ridge(0)
 #' @param std.base should features be standardized at the base level?
 #' @param std.meta should cross-validated predictions be standardized at the meta level?
-#' @param ll1 lower limit(s) for each coefficient at the base-level.
-#' @param ul1 upper limit(s) for each coefficient at the base-level.
-#' @param ll2 lower limit(s) for each coefficient at the meta-level.
-#' @param ul2 upper limit(s) for each coefficient at the meta-level.
+#' @param ll1 lower limit(s) for each coefficient at the base-level. Defaults to -Inf.
+#' @param ul1 upper limit(s) for each coefficient at the base-level. Defaults to Inf.
+#' @param ll2 lower limit(s) for each coefficient at the meta-level. Defaults to 0 (non-negativity constraints).
+#' @param ul2 upper limit(s) for each coefficient at the meta-level. Defaults to Inf.
 #' @param cvloss loss to use for cross-validation.
 #' @param metadat which attribute of the base learners should be used as input for the meta learner?
 #' @param cvlambda value of lambda at which cross-validated predictions are made.
 #' @param cvparallel whether to use 'foreach' to fit each CV fold.
+#' @param lambda.ratio the ratio between the largest and smallest lambda value.
+#' @param skip.fdev whether to skip checking if the fdev parameter is set to zero.
+#' @param skip.version whether to skip checking the version of the glmnet package.
 #' @return TBA.
 #' @keywords TBA
 #' @export
@@ -46,35 +49,7 @@
 StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, myseed = NA,
                       std.base = FALSE, std.meta = FALSE, ll1 = -Inf, ul1 = Inf,
                       ll2 = 0, ul2 = Inf, cvloss = "deviance", metadat = "response", cvlambda = "lambda.min",
-                      cvparallel = FALSE, lambda.ratio = 0.01){
-
-
-  # Performs two-level Stacked Penalized Logistic Regression (StaPLR) with
-  #   - a binary response variable
-  #   - a single penalized logistic model (L1 and/or L2) as base learner
-  #   - a single penalized logistic model (L1 and/or L2) as meta learner
-
-  # Input
-  #   x: input matrix of dimension nobs x nvars
-  #   y: outcome vector of length nobs
-  #   view: a vector of length nvars, where each entry is an integer describing to which view each feature corresponds.
-  #   alpha1: (base) alpha parameter for glmnet: lasso(1) / ridge(0)
-  #   alpha2: (meta) alpha parameter for glmnet: lasso(1) / ridge(0)
-  #   std.base: should features be standardized at the base level?
-  #   std.meta: should cross-validated predictions be standardized at the meta level?
-  #   ll1: lower limit(s) for each coefficient at the base-level.
-  #   ul1: upper limit(s) for each coefficient at the base-level.
-  #   ll2: lower limit(s) for each coefficient at the meta-level.
-  #   ul2: upper limit(s) for each coefficient at the meta-level.
-  #   cvloss: loss to use for cross-validation.
-  #   metadat: which attribute of the base learners should be used as input for the meta learner?
-  #   cvlambda: value of lambda at which cross-validated predictions are made.
-  #   cvparallel: whether to use 'foreach' to fit each CV fold.
-
-  # load libraries
-  # require(caret)
-  # require(glmnet)
-  # require(gglasso)
+                      cvparallel = FALSE, lambda.ratio = 0.01, skip.fdev = FALSE, skip.version = FALSE){
 
   # register parallel backend
   # if(cvparallel){
@@ -93,7 +68,21 @@ StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, myseed = NA,
   #   set.seed(myseed)
   # }
 
-  # !!!!!!!!!!= BUILD EARLY PATH TERMINATION CHECK !!!!!!!!!!!!!
+  # Check if glmnet.control parameter fdev is set to zero.
+  if(skip.fdev == FALSE){
+    if(glmnet.control()$fdev != 0){
+      glmnet.control(fdev=0)
+      message("Minimum fractional change in deviance for stopping path set to zero for the duration of this session. \n To reset to default use: glmnet.control(factory=TRUE) (NOT RECOMMENDED). \n To skip this check use: StaPLR(..., skip.fdev=TRUE) (NOT RECOMMENDED). \n")
+    }
+  }
+
+  # Check current version of glmnet
+  if(skip.version == FALSE){
+    if(packageVersion("glmnet") != '1.9.8'){
+      versionMessage <- paste0("Found glmnet version ", packageVersion("glmnet"), ". The recommended version of glmnet is 1.9-8. \n Package versions >= 2.0-1 are less stable than 1.9-8 due to a change in the cross-validation procedure. \n Because of this change, results may differ between versions 1.9-8 and >= 2.0-1. \n If you want to install glmnet 1.9-8 from source use e.g.: devtools::install_version(\"glmnet\", version=\"1.9-8\"). \n To skip this check use: StaPLR(..., skip.version=TRUE). \n")
+      message(versionMessage)
+    }
+  }
 
   # object initialization
   V <- length(unique(view))

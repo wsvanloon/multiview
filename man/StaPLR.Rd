@@ -7,7 +7,8 @@
 StaPLR(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, myseed = NA,
   std.base = FALSE, std.meta = FALSE, ll1 = -Inf, ul1 = Inf,
   ll2 = 0, ul2 = Inf, cvloss = "deviance", metadat = "response",
-  cvlambda = "lambda.min", cvparallel = FALSE, lambda.ratio = 0.01)
+  cvlambda = "lambda.min", cvparallel = FALSE, lambda.ratio = 0.01,
+  skip.fdev = FALSE, skip.version = FALSE)
 }
 \arguments{
 \item{x}{input matrix of dimension nobs x nvars}
@@ -24,13 +25,13 @@ StaPLR(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, myseed = NA,
 
 \item{std.meta}{should cross-validated predictions be standardized at the meta level?}
 
-\item{ll1}{lower limit(s) for each coefficient at the base-level.}
+\item{ll1}{lower limit(s) for each coefficient at the base-level. Defaults to -Inf.}
 
-\item{ul1}{upper limit(s) for each coefficient at the base-level.}
+\item{ul1}{upper limit(s) for each coefficient at the base-level. Defaults to Inf.}
 
-\item{ll2}{lower limit(s) for each coefficient at the meta-level.}
+\item{ll2}{lower limit(s) for each coefficient at the meta-level. Defaults to 0 (non-negativity constraints).}
 
-\item{ul2}{upper limit(s) for each coefficient at the meta-level.}
+\item{ul2}{upper limit(s) for each coefficient at the meta-level. Defaults to Inf.}
 
 \item{cvloss}{loss to use for cross-validation.}
 
@@ -39,6 +40,12 @@ StaPLR(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, myseed = NA,
 \item{cvlambda}{value of lambda at which cross-validated predictions are made.}
 
 \item{cvparallel}{whether to use 'foreach' to fit each CV fold.}
+
+\item{lambda.ratio}{the ratio between the largest and smallest lambda value.}
+
+\item{skip.fdev}{whether to skip checking if the fdev parameter is set to zero.}
+
+\item{skip.version}{whether to skip checking the version of the glmnet package.}
 }
 \value{
 TBA.
