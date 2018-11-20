@@ -2,3 +2,4 @@
 
 S3method(predict,StaPLR)
 export(StaPLR)
+import(foreach)

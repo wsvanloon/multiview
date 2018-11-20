@@ -12,3 +12,5 @@ LazyData: true
 RoxygenNote: 6.1.0
 Depends:
     glmnet (>= 1.9-8)
+Imports:
+    foreach (>= 1.4.4)

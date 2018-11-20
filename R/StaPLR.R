@@ -17,10 +17,12 @@
 #' @param cvlambda value of lambda at which cross-validated predictions are made.
 #' @param cvparallel whether to use 'foreach' to fit each CV fold.
 #' @param lambda.ratio the ratio between the largest and smallest lambda value.
+#' @param parallel whether to use foreach to fit the base-learners and obtain the cross-validated predictions in parallel. Executes sequentially unless a parallel backend is registered beforehand.
 #' @param skip.fdev whether to skip checking if the fdev parameter is set to zero.
 #' @param skip.version whether to skip checking the version of the glmnet package.
 #' @return TBA.
 #' @keywords TBA
+#' @import foreach
 #' @export
 #' @author Wouter van Loon <w.s.van.loon@fsw.leidenuniv.nl>
 #' @examples
@@ -49,24 +51,7 @@
 StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, myseed = NA,
                       std.base = FALSE, std.meta = FALSE, ll1 = -Inf, ul1 = Inf,
                       ll2 = 0, ul2 = Inf, cvloss = "deviance", metadat = "response", cvlambda = "lambda.min",
-                      cvparallel = FALSE, lambda.ratio = 0.01, skip.fdev = FALSE, skip.version = FALSE){
-
-  # register parallel backend
-  # if(cvparallel){
-  #   library(doParallel)
-  #   source("pardiag.R")
-  #   ncores <- detectCores()
-  #   if(getDoParWorkers() < ncores){
-  #     registerDoParallel(ncores)
-  #   }
-  #   print(pardiag())
-  #   cat("\n")
-  # }
-
-  # set seed
-  # if(!is.na(myseed)){
-  #   set.seed(myseed)
-  # }
+                      cvparallel = FALSE, lambda.ratio = 0.01, parallel = FALSE, skip.fdev = FALSE, skip.version = FALSE){
 
   # Check if glmnet.control parameter fdev is set to zero.
   if(skip.fdev == FALSE){
@@ -87,40 +72,69 @@ StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, myseed = NA,
   # object initialization
   V <- length(unique(view))
   n <- length(y)
-  Z <- matrix(NA, n, V)
   folds <- kFolds(y, nfolds)
-  cv.base <- vector("list", V)
 
-  # STEP 0: fit glmnet on each of the domains
-  cat("Training base-learner on each domain...", "\n")
-  for (v in 1:V){
-    cat(v, "")
-    cv.base[[v]] <- glmnet::cv.glmnet(x[, view == v], y, family = "binomial", nfolds = nfolds,
-                              type.measure = cvloss, alpha = alpha1,
-                              standardize = std.base, lower.limits = ll1,
-                              upper.limits = ul1, parallel = cvparallel, lambda.min.ratio = lambda.ratio)
+  # SEQUENTIAL PROCESSING
+  if(parallel == FALSE){
+    Z <- matrix(NA, n, V)
+    cv.base <- vector("list", V)
+
+    cat("Training base-learner on each view...", "\n")
+    for (v in 1:V){
+      cat(v, "")
+      cv.base[[v]] <- glmnet::cv.glmnet(x[, view == v], y, family = "binomial", nfolds = nfolds,
+                                        type.measure = cvloss, alpha = alpha1,
+                                        standardize = std.base, lower.limits = ll1,
+                                        upper.limits = ul1, parallel = cvparallel, lambda.min.ratio = lambda.ratio)
+    }
+    cat("\n")
+
+    cat("Calculating cross-validated predictions for each view...", "\n")
+    for(v in 1:V){
+      cat(v, "")
+      for(k in 1:nfolds){
+        cvf <- glmnet::cv.glmnet(x[folds != k, view == v], y[folds != k], family = "binomial",
+                                 type.measure = cvloss, alpha = alpha1,
+                                 standardize = std.base, lower.limits = ll1,
+                                 upper.limits = ul1, parallel = cvparallel, lambda.min.ratio = lambda.ratio)
+        Z[folds == k,v] <- predict(cvf, newx = x[folds == k, view == v], s = cvlambda, type = metadat)
+      }
+    }
+    cat("\n")
+
+    cat("Training meta-learner...", "\n")
+    cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", type.measure = cvloss, alpha = alpha2,
+                                 standardize = std.meta, lower.limits = ll2,
+                                 upper.limits = ul2, parallel = cvparallel, lambda.min.ratio=lambda.ratio)
+
   }
-  cat("\n")
 
-  # STEP 1: Loop over domains and k-fold CV to obtain Z
-  cat("Calculating cross-validated predictions for each domain...", "\n")
-  for(v in 1:V){
-    cat(v, "")
-    for(k in 1:nfolds){
-      cvf <- glmnet::cv.glmnet(x[folds != k, view == v], y[folds != k], family = "binomial",
-                       type.measure = cvloss, alpha = alpha1,
-                       standardize = std.base, lower.limits = ll1,
-                       upper.limits = ul1, parallel = cvparallel, lambda.min.ratio = lambda.ratio)
-      Z[folds == k,v] <- predict(cvf, newx = x[folds == k, view == v], s = cvlambda, type = metadat)
-    } # 10fold cv
-  } # domains
-  cat("\n")
+  # PARALLEL PROCESSING
+  if(parallel == TRUE){
 
-  # STEP 2: Train meta learner
-  cat("Training meta-learner...", "\n")
-  cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", type.measure = cvloss, alpha = alpha2,
-                       standardize = std.meta, lower.limits = ll2,
-                       upper.limits = ul2, parallel = cvparallel, lambda.min.ratio=lambda.ratio)
+    cv.base <- foreach(v=(1:V)) %dopar% {
+      glmnet::cv.glmnet(x[, view == v], y, family = "binomial", nfolds = nfolds,
+                        type.measure = cvloss, alpha = alpha1,
+                        standardize = std.base, lower.limits = ll1,
+                        upper.limits = ul1, parallel = cvparallel, lambda.min.ratio = lambda.ratio)
+    }
+
+    Z <- foreach(v=(1:V), .combine=cbind) %:%
+      foreach(k=(1:nfolds), .combine="+") %dopar% {
+        cvf <- glmnet::cv.glmnet(x[folds != k, view == v], y[folds != k], family = "binomial",
+                                 type.measure = cvloss, alpha = alpha1,
+                                 standardize = std.base, lower.limits = ll1,
+                                 upper.limits = ul1, parallel = cvparallel, lambda.min.ratio = lambda.ratio)
+        newy <- rep(0, length(y))
+        newy[folds == k] <- predict(cvf, newx = x[folds == k, view == v], s = cvlambda, type = metadat)
+        return(newy)
+      }
+
+    cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", type.measure = cvloss, alpha = alpha2,
+                                 standardize = std.meta, lower.limits = ll2,
+                                 upper.limits = ul2, parallel = cvparallel, lambda.min.ratio=lambda.ratio)
+  }
+
 
   # create output list
   out = list(

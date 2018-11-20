@@ -8,7 +8,7 @@ StaPLR(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, myseed = NA,
   std.base = FALSE, std.meta = FALSE, ll1 = -Inf, ul1 = Inf,
   ll2 = 0, ul2 = Inf, cvloss = "deviance", metadat = "response",
   cvlambda = "lambda.min", cvparallel = FALSE, lambda.ratio = 0.01,
-  skip.fdev = FALSE, skip.version = FALSE)
+  parallel = FALSE, skip.fdev = FALSE, skip.version = FALSE)
 }
 \arguments{
 \item{x}{input matrix of dimension nobs x nvars}
@@ -42,6 +42,8 @@ StaPLR(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, myseed = NA,
 \item{cvparallel}{whether to use 'foreach' to fit each CV fold.}
 
 \item{lambda.ratio}{the ratio between the largest and smallest lambda value.}
+
+\item{parallel}{whether to use foreach to fit the base-learners and obtain the cross-validated predictions in parallel. Executes sequentially unless a parallel backend is registered beforehand.}
 
 \item{skip.fdev}{whether to skip checking if the fdev parameter is set to zero.}
 
