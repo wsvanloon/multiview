@@ -75,12 +75,13 @@ StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, seed = NA,
   # object initialization
   V <- length(unique(view))
   n <- length(y)
-  folds <- kFolds(y, nfolds)
 
-  # SEQUENTIAL PROCESSING
+
+  # LEGACY PROCESSING (FOR DEBUGGING PURPOSES)
   if(legacy == TRUE){
     Z <- matrix(NA, n, V)
     cv.base <- vector("list", V)
+    folds <- kFolds(y, nfolds)
 
     cat("Training base-learner on each view...", "\n")
     for (v in 1:V){
@@ -115,6 +116,15 @@ StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, seed = NA,
   # SEQUENTIAL PROCESSING
   if(parallel == FALSE && legacy == FALSE){
 
+    if(!is.na(seed)){
+      set.seed(seed)
+      folds <- kFolds(y, nfolds)
+      base.seeds <- sample(.Machine$integer.max/2, size = V)
+      z.seeds <- matrix(sample(.Machine$integer.max/2, size = V*nfolds), nrow=nfolds, ncol=V)
+      meta.seed <- sample(.Machine$integer.max/2, size=1)
+    }
+    else folds <- kFolds(y, nfolds)
+
     if(progress == TRUE){
       message("Training base-learner on each view...")
       pb <- txtProgressBar(min=0, max=V, style=3)
@@ -122,6 +132,9 @@ StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, seed = NA,
     cv.base <- foreach(v=(1:V)) %do% {
       if(progress == TRUE){
         setTxtProgressBar(pb, v)
+      }
+      if(!is.na(seed)){
+        set.seed(base.seeds[v])
       }
       glmnet::cv.glmnet(x[, view == v], y, family = "binomial", nfolds = nfolds,
                         type.measure = cvloss, alpha = alpha1,
@@ -138,6 +151,9 @@ StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, seed = NA,
         if(progress == TRUE){
           setTxtProgressBar(pb, getTxtProgressBar(pb)+1)
         }
+        if(!is.na(seed)){
+          set.seed(z.seeds[k, v])
+        }
         cvf <- glmnet::cv.glmnet(x[folds != k, view == v], y[folds != k], family = "binomial",
                                  type.measure = cvloss, alpha = alpha1,
                                  standardize = std.base, lower.limits = ll1,
@@ -151,6 +167,9 @@ StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, seed = NA,
     if(progress == TRUE){
       message("\n Training meta learner...")
     }
+    if(!is.na(seed)){
+      set.seed(meta.seed)
+    }
     cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", type.measure = cvloss, alpha = alpha2,
                                  standardize = std.meta, lower.limits = ll2,
                                  upper.limits = ul2, parallel = cvparallel, lambda.min.ratio=lambda.ratio)
@@ -159,7 +178,19 @@ StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, seed = NA,
   # PARALLEL PROCESSING
   if(parallel == TRUE && legacy == FALSE){
 
+    if(!is.na(seed)){
+      set.seed(seed)
+      folds <- kFolds(y, nfolds)
+      base.seeds <- sample(.Machine$integer.max/2, size = V)
+      z.seeds <- matrix(sample(.Machine$integer.max/2, size = V*nfolds), nrow=nfolds, ncol=V)
+      meta.seed <- sample(.Machine$integer.max/2, size=1)
+    }
+    else folds <- kFolds(y, nfolds)
+
     cv.base <- foreach(v=(1:V)) %dopar% {
+      if(!is.na(seed)){
+        set.seed(base.seeds[v])
+      }
       glmnet::cv.glmnet(x[, view == v], y, family = "binomial", nfolds = nfolds,
                         type.measure = cvloss, alpha = alpha1,
                         standardize = std.base, lower.limits = ll1,
@@ -168,6 +199,9 @@ StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, seed = NA,
 
     Z <- foreach(v=(1:V), .combine=cbind) %:%
       foreach(k=(1:nfolds), .combine="+") %dopar% {
+        if(!is.na(seed)){
+          set.seed(z.seeds[k, v])
+        }
         cvf <- glmnet::cv.glmnet(x[folds != k, view == v], y[folds != k], family = "binomial",
                                  type.measure = cvloss, alpha = alpha1,
                                  standardize = std.base, lower.limits = ll1,
@@ -178,6 +212,9 @@ StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, seed = NA,
       }
     dimnames(Z) <- NULL
 
+    if(!is.na(seed)){
+      set.seed(meta.seed)
+    }
     cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", type.measure = cvloss, alpha = alpha2,
                                  standardize = std.meta, lower.limits = ll2,
                                  upper.limits = ul2, parallel = cvparallel, lambda.min.ratio=lambda.ratio)
