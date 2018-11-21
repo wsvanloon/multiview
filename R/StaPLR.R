@@ -6,6 +6,8 @@
 #' @param view a vector of length nvars, where each entry is an integer describing to which view each feature corresponds.
 #' @param alpha1 (base) alpha parameter for glmnet: lasso(1) / ridge(0)
 #' @param alpha2 (meta) alpha parameter for glmnet: lasso(1) / ridge(0)
+#' @param nfolds number of folds to use for all cross-validation.
+#' @param seed numeric value specifying the seed. Setting the seed this way ensures the results are reproducable even when the computations are performed in parallel.
 #' @param std.base should features be standardized at the base level?
 #' @param std.meta should cross-validated predictions be standardized at the meta level?
 #' @param ll1 lower limit(s) for each coefficient at the base-level. Defaults to -Inf.
@@ -20,6 +22,7 @@
 #' @param parallel whether to use foreach to fit the base-learners and obtain the cross-validated predictions in parallel. Executes sequentially unless a parallel backend is registered beforehand.
 #' @param skip.fdev whether to skip checking if the fdev parameter is set to zero.
 #' @param skip.version whether to skip checking the version of the glmnet package.
+#' @param progress whether to show a progress bar (only supported when parallel = FALSE).
 #' @return TBA.
 #' @keywords TBA
 #' @import foreach
@@ -48,10 +51,10 @@
 #' new_X <- matrix(rnorm(16), nrow=2)
 #' predict(fit, new_X)
 
-StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, myseed = NA,
+StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, seed = NA,
                       std.base = FALSE, std.meta = FALSE, ll1 = -Inf, ul1 = Inf,
                       ll2 = 0, ul2 = Inf, cvloss = "deviance", metadat = "response", cvlambda = "lambda.min",
-                      cvparallel = FALSE, lambda.ratio = 0.01, parallel = FALSE, skip.fdev = FALSE, skip.version = FALSE){
+                      cvparallel = FALSE, lambda.ratio = 0.01, parallel = FALSE, skip.fdev = FALSE, skip.version = FALSE, progress = TRUE, legacy=FALSE){
 
   # Check if glmnet.control parameter fdev is set to zero.
   if(skip.fdev == FALSE){
@@ -75,7 +78,7 @@ StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, myseed = NA,
   folds <- kFolds(y, nfolds)
 
   # SEQUENTIAL PROCESSING
-  if(parallel == FALSE){
+  if(legacy == TRUE){
     Z <- matrix(NA, n, V)
     cv.base <- vector("list", V)
 
@@ -109,8 +112,52 @@ StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, myseed = NA,
 
   }
 
+  # SEQUENTIAL PROCESSING
+  if(parallel == FALSE && legacy == FALSE){
+
+    if(progress == TRUE){
+      message("Training base-learner on each view...")
+      pb <- txtProgressBar(min=0, max=V, style=3)
+    }
+    cv.base <- foreach(v=(1:V)) %do% {
+      if(progress == TRUE){
+        setTxtProgressBar(pb, v)
+      }
+      glmnet::cv.glmnet(x[, view == v], y, family = "binomial", nfolds = nfolds,
+                        type.measure = cvloss, alpha = alpha1,
+                        standardize = std.base, lower.limits = ll1,
+                        upper.limits = ul1, parallel = cvparallel, lambda.min.ratio = lambda.ratio)
+    }
+
+    if(progress == TRUE){
+      message("\n Calculating cross-validated predictions...")
+      pb <- txtProgressBar(min=0, max=V*nfolds, style=3)
+    }
+    Z <- foreach(v=(1:V), .combine=cbind) %:%
+      foreach(k=(1:nfolds), .combine="+") %do% {
+        if(progress == TRUE){
+          setTxtProgressBar(pb, getTxtProgressBar(pb)+1)
+        }
+        cvf <- glmnet::cv.glmnet(x[folds != k, view == v], y[folds != k], family = "binomial",
+                                 type.measure = cvloss, alpha = alpha1,
+                                 standardize = std.base, lower.limits = ll1,
+                                 upper.limits = ul1, parallel = cvparallel, lambda.min.ratio = lambda.ratio)
+        newy <- rep(0, length(y))
+        newy[folds == k] <- predict(cvf, newx = x[folds == k, view == v], s = cvlambda, type = metadat)
+        return(newy)
+      }
+    dimnames(Z) <- NULL
+
+    if(progress == TRUE){
+      message("\n Training meta learner...")
+    }
+    cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", type.measure = cvloss, alpha = alpha2,
+                                 standardize = std.meta, lower.limits = ll2,
+                                 upper.limits = ul2, parallel = cvparallel, lambda.min.ratio=lambda.ratio)
+  }
+
   # PARALLEL PROCESSING
-  if(parallel == TRUE){
+  if(parallel == TRUE && legacy == FALSE){
 
     cv.base <- foreach(v=(1:V)) %dopar% {
       glmnet::cv.glmnet(x[, view == v], y, family = "binomial", nfolds = nfolds,
@@ -129,6 +176,7 @@ StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, myseed = NA,
         newy[folds == k] <- predict(cvf, newx = x[folds == k, view == v], s = cvlambda, type = metadat)
         return(newy)
       }
+    dimnames(Z) <- NULL
 
     cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", type.measure = cvloss, alpha = alpha2,
                                  standardize = std.meta, lower.limits = ll2,
@@ -149,7 +197,7 @@ StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, myseed = NA,
   class(out) <- "StaPLR"
 
   # return output
-  cat("DONE", "\n")
+  message("DONE")
   return(out)
 }
 

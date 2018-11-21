@@ -4,11 +4,12 @@
 \alias{StaPLR}
 \title{Stacked Penalized Logistic Regression}
 \usage{
-StaPLR(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, myseed = NA,
+StaPLR(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, seed = NA,
   std.base = FALSE, std.meta = FALSE, ll1 = -Inf, ul1 = Inf,
   ll2 = 0, ul2 = Inf, cvloss = "deviance", metadat = "response",
   cvlambda = "lambda.min", cvparallel = FALSE, lambda.ratio = 0.01,
-  parallel = FALSE, skip.fdev = FALSE, skip.version = FALSE)
+  parallel = FALSE, skip.fdev = FALSE, skip.version = FALSE,
+  progress = TRUE, legacy = FALSE)
 }
 \arguments{
 \item{x}{input matrix of dimension nobs x nvars}
@@ -20,6 +21,10 @@ StaPLR(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, myseed = NA,
 \item{alpha1}{(base) alpha parameter for glmnet: lasso(1) / ridge(0)}
 
 \item{alpha2}{(meta) alpha parameter for glmnet: lasso(1) / ridge(0)}
+
+\item{nfolds}{number of folds to use for all cross-validation.}
+
+\item{seed}{numeric value specifying the seed. Setting the seed this way ensures the results are reproducable even when the computations are performed in parallel.}
 
 \item{std.base}{should features be standardized at the base level?}
 
@@ -48,6 +53,8 @@ StaPLR(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, myseed = NA,
 \item{skip.fdev}{whether to skip checking if the fdev parameter is set to zero.}
 
 \item{skip.version}{whether to skip checking the version of the glmnet package.}
+
+\item{progress}{whether to show a progress bar (only supported when parallel = FALSE).}
 }
 \value{
 TBA.
