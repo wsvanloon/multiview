@@ -39,9 +39,9 @@ StaPLR(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0,
 
 \item{ul1}{upper limit(s) for each coefficient at the base-level. Defaults to Inf.}
 
-\item{ll2}{lower limit(s) for each coefficient at the meta-level. Defaults to 0 (non-negativity constraints).}
+\item{ll2}{lower limit(s) for each coefficient at the meta-level. Defaults to 0 (non-negativity constraints). Does not apply to correct.for features.}
 
-\item{ul2}{upper limit(s) for each coefficient at the meta-level. Defaults to Inf.}
+\item{ul2}{upper limit(s) for each coefficient at the meta-level. Defaults to Inf. Does not apply to correct.for features.}
 
 \item{cvloss}{loss to use for cross-validation.}
 
@@ -49,11 +49,11 @@ StaPLR(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0,
 
 \item{cvlambda}{value of lambda at which cross-validated predictions are made.}
 
-\item{cvparallel}{whether to use 'foreach' to fit each CV fold.}
+\item{cvparallel}{whether to use 'foreach' to fit each CV fold (DO NOT USE, USE OPTION parallel INSTEAD).}
 
 \item{lambda.ratio}{the ratio between the largest and smallest lambda value.}
 
-\item{penalty.weights}{(optional) a vector of length nviews+ncol(correct.for), containing different penalty factors for the meta-learner. Defaults to rep(1,nviews) if correct.for = NULL, and c(rep(0, ncol(correct.for)), rep(1, nviews)) otherwise.}
+\item{penalty.weights}{(optional) a vector of length nviews, containing different penalty factors for the meta-learner. Defaults to rep(1,nviews). The penalty factor is set to 0 for correct.for features.}
 
 \item{parallel}{whether to use foreach to fit the base-learners and obtain the cross-validated predictions in parallel. Executes sequentially unless a parallel backend is registered beforehand.}
 

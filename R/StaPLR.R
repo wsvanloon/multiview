@@ -14,14 +14,14 @@
 #' @param std.meta should cross-validated predictions be standardized at the meta level?
 #' @param ll1 lower limit(s) for each coefficient at the base-level. Defaults to -Inf.
 #' @param ul1 upper limit(s) for each coefficient at the base-level. Defaults to Inf.
-#' @param ll2 lower limit(s) for each coefficient at the meta-level. Defaults to 0 (non-negativity constraints).
-#' @param ul2 upper limit(s) for each coefficient at the meta-level. Defaults to Inf.
+#' @param ll2 lower limit(s) for each coefficient at the meta-level. Defaults to 0 (non-negativity constraints). Does not apply to correct.for features.
+#' @param ul2 upper limit(s) for each coefficient at the meta-level. Defaults to Inf. Does not apply to correct.for features.
 #' @param cvloss loss to use for cross-validation.
 #' @param metadat which attribute of the base learners should be used as input for the meta learner?
 #' @param cvlambda value of lambda at which cross-validated predictions are made.
-#' @param cvparallel whether to use 'foreach' to fit each CV fold.
+#' @param cvparallel whether to use 'foreach' to fit each CV fold (DO NOT USE, USE OPTION parallel INSTEAD).
 #' @param lambda.ratio the ratio between the largest and smallest lambda value.
-#' @param penalty.weights (optional) a vector of length nviews+ncol(correct.for), containing different penalty factors for the meta-learner. Defaults to rep(1,nviews) if correct.for = NULL, and c(rep(0, ncol(correct.for)), rep(1, nviews)) otherwise.
+#' @param penalty.weights (optional) a vector of length nviews, containing different penalty factors for the meta-learner. Defaults to rep(1,nviews). The penalty factor is set to 0 for correct.for features.
 #' @param parallel whether to use foreach to fit the base-learners and obtain the cross-validated predictions in parallel. Executes sequentially unless a parallel backend is registered beforehand.
 #' @param skip.fdev whether to skip checking if the fdev parameter is set to zero.
 #' @param skip.version whether to skip checking the version of the glmnet package.
@@ -154,6 +154,11 @@ StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0
       if(is.null(penalty.weights)){
         penalty.weights <- c(rep(0, ncol(correct.for)), rep(1, ncol(Z)))
       }
+      else{
+        penalty.weights <- c(rep(0, ncol(correct.for)), penalty.weights)
+      }
+      ll2 <- c(rep(-Inf, ncol(correct.for)), rep(ll2, ncol(Z)))
+      ul2 <- c(rep(Inf, ncol(correct.for)), rep(ul2, ncol(Z)))
       Z <- cbind(correct.for, Z)
       cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", type.measure = cvloss, alpha = alpha2,
                                    standardize = std.meta, lower.limits = ll2,
@@ -219,6 +224,11 @@ StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0
       if(is.null(penalty.weights)){
         penalty.weights <- c(rep(0, ncol(correct.for)), rep(1, ncol(Z)))
       }
+      else{
+        penalty.weights <- c(rep(0, ncol(correct.for)), penalty.weights)
+      }
+      ll2 <- c(rep(-Inf, ncol(correct.for)), rep(ll2, ncol(Z)))
+      ul2 <- c(rep(Inf, ncol(correct.for)), rep(ul2, ncol(Z)))
       Z <- cbind(correct.for, Z)
       cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", type.measure = cvloss, alpha = alpha2,
                                    standardize = std.meta, lower.limits = ll2,
