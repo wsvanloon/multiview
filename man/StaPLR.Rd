@@ -4,12 +4,13 @@
 \alias{StaPLR}
 \title{Stacked Penalized Logistic Regression}
 \usage{
-StaPLR(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, seed = NA,
-  std.base = FALSE, std.meta = FALSE, ll1 = -Inf, ul1 = Inf,
-  ll2 = 0, ul2 = Inf, cvloss = "deviance", metadat = "response",
-  cvlambda = "lambda.min", cvparallel = FALSE, lambda.ratio = 0.01,
+StaPLR(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0,
+  alpha2 = 1, nfolds = 5, seed = NULL, std.base = FALSE,
+  std.meta = FALSE, ll1 = -Inf, ul1 = Inf, ll2 = 0, ul2 = Inf,
+  cvloss = "deviance", metadat = "response", cvlambda = "lambda.min",
+  cvparallel = FALSE, lambda.ratio = 0.01, penalty.weights = NULL,
   parallel = FALSE, skip.fdev = FALSE, skip.version = FALSE,
-  progress = TRUE, legacy = FALSE)
+  progress = TRUE)
 }
 \arguments{
 \item{x}{input matrix of dimension nobs x nvars}
@@ -18,13 +19,17 @@ StaPLR(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, seed = NA,
 
 \item{view}{a vector of length nvars, where each entry is an integer describing to which view each feature corresponds.}
 
+\item{view.names}{(optional) a character vector of length nviews specifying a name for each view.}
+
+\item{correct.for}{(optional) a matrix with nrow = nobs, where each column is a feature which should be included directly into the meta.learner. By default these features are not penalized (see penalty.weights) and appear at the top of the coefficient list.}
+
 \item{alpha1}{(base) alpha parameter for glmnet: lasso(1) / ridge(0)}
 
 \item{alpha2}{(meta) alpha parameter for glmnet: lasso(1) / ridge(0)}
 
 \item{nfolds}{number of folds to use for all cross-validation.}
 
-\item{seed}{numeric value specifying the seed. Setting the seed this way ensures the results are reproducable even when the computations are performed in parallel.}
+\item{seed}{(optional) numeric value specifying the seed. Setting the seed this way ensures the results are reproducable even when the computations are performed in parallel.}
 
 \item{std.base}{should features be standardized at the base level?}
 
@@ -47,6 +52,8 @@ StaPLR(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, seed = NA,
 \item{cvparallel}{whether to use 'foreach' to fit each CV fold.}
 
 \item{lambda.ratio}{the ratio between the largest and smallest lambda value.}
+
+\item{penalty.weights}{(optional) a vector of length nviews+ncol(correct.for), containing different penalty factors for the meta-learner. Defaults to rep(1,nviews) if correct.for = NULL, and c(rep(0, ncol(correct.for)), rep(1, nviews)) otherwise.}
 
 \item{parallel}{whether to use foreach to fit the base-learners and obtain the cross-validated predictions in parallel. Executes sequentially unless a parallel backend is registered beforehand.}
 

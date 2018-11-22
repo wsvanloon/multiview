@@ -4,10 +4,12 @@
 #' @param x input matrix of dimension nobs x nvars
 #' @param y outcome vector of length nobs
 #' @param view a vector of length nvars, where each entry is an integer describing to which view each feature corresponds.
+#' @param view.names (optional) a character vector of length nviews specifying a name for each view.
+#' @param correct.for (optional) a matrix with nrow = nobs, where each column is a feature which should be included directly into the meta.learner. By default these features are not penalized (see penalty.weights) and appear at the top of the coefficient list.
 #' @param alpha1 (base) alpha parameter for glmnet: lasso(1) / ridge(0)
 #' @param alpha2 (meta) alpha parameter for glmnet: lasso(1) / ridge(0)
 #' @param nfolds number of folds to use for all cross-validation.
-#' @param seed numeric value specifying the seed. Setting the seed this way ensures the results are reproducable even when the computations are performed in parallel.
+#' @param seed (optional) numeric value specifying the seed. Setting the seed this way ensures the results are reproducable even when the computations are performed in parallel.
 #' @param std.base should features be standardized at the base level?
 #' @param std.meta should cross-validated predictions be standardized at the meta level?
 #' @param ll1 lower limit(s) for each coefficient at the base-level. Defaults to -Inf.
@@ -19,6 +21,7 @@
 #' @param cvlambda value of lambda at which cross-validated predictions are made.
 #' @param cvparallel whether to use 'foreach' to fit each CV fold.
 #' @param lambda.ratio the ratio between the largest and smallest lambda value.
+#' @param penalty.weights (optional) a vector of length nviews+ncol(correct.for), containing different penalty factors for the meta-learner. Defaults to rep(1,nviews) if correct.for = NULL, and c(rep(0, ncol(correct.for)), rep(1, nviews)) otherwise.
 #' @param parallel whether to use foreach to fit the base-learners and obtain the cross-validated predictions in parallel. Executes sequentially unless a parallel backend is registered beforehand.
 #' @param skip.fdev whether to skip checking if the fdev parameter is set to zero.
 #' @param skip.version whether to skip checking the version of the glmnet package.
@@ -51,10 +54,10 @@
 #' new_X <- matrix(rnorm(16), nrow=2)
 #' predict(fit, new_X)
 
-StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, seed = NA,
+StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0, alpha2 = 1, nfolds = 5, seed = NULL,
                       std.base = FALSE, std.meta = FALSE, ll1 = -Inf, ul1 = Inf,
                       ll2 = 0, ul2 = Inf, cvloss = "deviance", metadat = "response", cvlambda = "lambda.min",
-                      cvparallel = FALSE, lambda.ratio = 0.01, parallel = FALSE, skip.fdev = FALSE, skip.version = FALSE, progress = TRUE, legacy=FALSE){
+                      cvparallel = FALSE, lambda.ratio = 0.01, penalty.weights = NULL, parallel = FALSE, skip.fdev = FALSE, skip.version = FALSE, progress = TRUE){
 
   # Check if glmnet.control parameter fdev is set to zero.
   if(skip.fdev == FALSE){
@@ -76,47 +79,10 @@ StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, seed = NA,
   V <- length(unique(view))
   n <- length(y)
 
-
-  # LEGACY PROCESSING (FOR DEBUGGING PURPOSES)
-  if(legacy == TRUE){
-    Z <- matrix(NA, n, V)
-    cv.base <- vector("list", V)
-    folds <- kFolds(y, nfolds)
-
-    cat("Training base-learner on each view...", "\n")
-    for (v in 1:V){
-      cat(v, "")
-      cv.base[[v]] <- glmnet::cv.glmnet(x[, view == v], y, family = "binomial", nfolds = nfolds,
-                                        type.measure = cvloss, alpha = alpha1,
-                                        standardize = std.base, lower.limits = ll1,
-                                        upper.limits = ul1, parallel = cvparallel, lambda.min.ratio = lambda.ratio)
-    }
-    cat("\n")
-
-    cat("Calculating cross-validated predictions for each view...", "\n")
-    for(v in 1:V){
-      cat(v, "")
-      for(k in 1:nfolds){
-        cvf <- glmnet::cv.glmnet(x[folds != k, view == v], y[folds != k], family = "binomial",
-                                 type.measure = cvloss, alpha = alpha1,
-                                 standardize = std.base, lower.limits = ll1,
-                                 upper.limits = ul1, parallel = cvparallel, lambda.min.ratio = lambda.ratio)
-        Z[folds == k,v] <- predict(cvf, newx = x[folds == k, view == v], s = cvlambda, type = metadat)
-      }
-    }
-    cat("\n")
-
-    cat("Training meta-learner...", "\n")
-    cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", type.measure = cvloss, alpha = alpha2,
-                                 standardize = std.meta, lower.limits = ll2,
-                                 upper.limits = ul2, parallel = cvparallel, lambda.min.ratio=lambda.ratio)
-
-  }
-
   # SEQUENTIAL PROCESSING
-  if(parallel == FALSE && legacy == FALSE){
+  if(parallel == FALSE){
 
-    if(!is.na(seed)){
+    if(!is.null(seed)){
       set.seed(seed)
       folds <- kFolds(y, nfolds)
       base.seeds <- sample(.Machine$integer.max/2, size = V)
@@ -133,7 +99,7 @@ StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, seed = NA,
       if(progress == TRUE){
         setTxtProgressBar(pb, v)
       }
-      if(!is.na(seed)){
+      if(!is.null(seed)){
         set.seed(base.seeds[v])
       }
       glmnet::cv.glmnet(x[, view == v], y, family = "binomial", nfolds = nfolds,
@@ -146,12 +112,13 @@ StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, seed = NA,
       message("\n Calculating cross-validated predictions...")
       pb <- txtProgressBar(min=0, max=V*nfolds, style=3)
     }
+
     Z <- foreach(v=(1:V), .combine=cbind) %:%
       foreach(k=(1:nfolds), .combine="+") %do% {
         if(progress == TRUE){
           setTxtProgressBar(pb, getTxtProgressBar(pb)+1)
         }
-        if(!is.na(seed)){
+        if(!is.null(seed)){
           set.seed(z.seeds[k, v])
         }
         cvf <- glmnet::cv.glmnet(x[folds != k, view == v], y[folds != k], family = "binomial",
@@ -163,22 +130,42 @@ StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, seed = NA,
         return(newy)
       }
     dimnames(Z) <- NULL
+    if(!is.null(view.names)){
+      colnames(Z) <- view.names
+    }
 
     if(progress == TRUE){
       message("\n Training meta learner...")
     }
-    if(!is.na(seed)){
+    if(!is.null(seed)){
       set.seed(meta.seed)
     }
-    cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", type.measure = cvloss, alpha = alpha2,
-                                 standardize = std.meta, lower.limits = ll2,
-                                 upper.limits = ul2, parallel = cvparallel, lambda.min.ratio=lambda.ratio)
+    if(is.null(correct.for) && is.null(penalty.weights)){
+      cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", type.measure = cvloss, alpha = alpha2,
+                                   standardize = std.meta, lower.limits = ll2,
+                                   upper.limits = ul2, parallel = cvparallel, lambda.min.ratio=lambda.ratio)
+    }
+    else if(is.null(correct.for) && !is.null(penalty.weights)){
+      cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", type.measure = cvloss, alpha = alpha2,
+                                   standardize = std.meta, lower.limits = ll2,
+                                   upper.limits = ul2, parallel = cvparallel, lambda.min.ratio=lambda.ratio, penalty.factor=penalty.weights)
+    }
+    else{
+      if(is.null(penalty.weights)){
+        penalty.weights <- c(rep(0, ncol(correct.for)), rep(1, ncol(Z)))
+      }
+      Z <- cbind(correct.for, Z)
+      cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", type.measure = cvloss, alpha = alpha2,
+                                   standardize = std.meta, lower.limits = ll2,
+                                   upper.limits = ul2, parallel = cvparallel, lambda.min.ratio=lambda.ratio, penalty.factor=penalty.weights)
+    }
+
   }
 
   # PARALLEL PROCESSING
-  if(parallel == TRUE && legacy == FALSE){
+  if(parallel == TRUE){
 
-    if(!is.na(seed)){
+    if(!is.null(seed)){
       set.seed(seed)
       folds <- kFolds(y, nfolds)
       base.seeds <- sample(.Machine$integer.max/2, size = V)
@@ -188,7 +175,7 @@ StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, seed = NA,
     else folds <- kFolds(y, nfolds)
 
     cv.base <- foreach(v=(1:V)) %dopar% {
-      if(!is.na(seed)){
+      if(!is.null(seed)){
         set.seed(base.seeds[v])
       }
       glmnet::cv.glmnet(x[, view == v], y, family = "binomial", nfolds = nfolds,
@@ -199,7 +186,7 @@ StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, seed = NA,
 
     Z <- foreach(v=(1:V), .combine=cbind) %:%
       foreach(k=(1:nfolds), .combine="+") %dopar% {
-        if(!is.na(seed)){
+        if(!is.null(seed)){
           set.seed(z.seeds[k, v])
         }
         cvf <- glmnet::cv.glmnet(x[folds != k, view == v], y[folds != k], family = "binomial",
@@ -211,13 +198,32 @@ StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, seed = NA,
         return(newy)
       }
     dimnames(Z) <- NULL
+    if(!is.null(view.names)){
+      colnames(Z) <- view.names
+    }
 
-    if(!is.na(seed)){
+    if(!is.null(seed)){
       set.seed(meta.seed)
     }
-    cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", type.measure = cvloss, alpha = alpha2,
-                                 standardize = std.meta, lower.limits = ll2,
-                                 upper.limits = ul2, parallel = cvparallel, lambda.min.ratio=lambda.ratio)
+    if(is.null(correct.for) && is.null(penalty.weights)){
+      cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", type.measure = cvloss, alpha = alpha2,
+                                   standardize = std.meta, lower.limits = ll2,
+                                   upper.limits = ul2, parallel = cvparallel, lambda.min.ratio=lambda.ratio)
+    }
+    else if(is.null(correct.for) && !is.null(penalty.weights)){
+      cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", type.measure = cvloss, alpha = alpha2,
+                                   standardize = std.meta, lower.limits = ll2,
+                                   upper.limits = ul2, parallel = cvparallel, lambda.min.ratio=lambda.ratio, penalty.factor=penalty.weights)
+    }
+    else{
+      if(is.null(penalty.weights)){
+        penalty.weights <- c(rep(0, ncol(correct.for)), rep(1, ncol(Z)))
+      }
+      Z <- cbind(correct.for, Z)
+      cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", type.measure = cvloss, alpha = alpha2,
+                                   standardize = std.meta, lower.limits = ll2,
+                                   upper.limits = ul2, parallel = cvparallel, lambda.min.ratio=lambda.ratio, penalty.factor=penalty.weights)
+    }
   }
 
 
@@ -245,6 +251,7 @@ StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, seed = NA,
 #' Fit a two-level stacked penalized logistic regression model with a single base-learner and a single meta-learner.
 #' @param object Fitted "StaPLR" model object.
 #' @param newx Matrix of new values for x at which predictions are to be made. Must be a matrix.
+#' @param newcf matrix of new values of correction features, if correct.for was specified during model fitting.
 #' @param metadat The attribute of the base-learners to be used as input to the meta-learner.
 #' @param predtype The type of prediction returned by the meta-learner.
 #' @param cvlambda Value of the penalty parameter lambda at which predictions are to be made.
@@ -275,14 +282,7 @@ StaPLR <- function(x, y, view, alpha1 = 0, alpha2 = 1, nfolds = 5, seed = NA,
 #' new_X <- matrix(rnorm(16), nrow=2)
 #' predict(fit, new_X)
 
-predict.StaPLR <- function(object, newx, metadat = "response", predtype = "response", cvlambda = "lambda.min"){
-  # prediction based on StaPLR
-  # Input
-  #   object: an output object from StaPLR
-  #   newx: matrix with new values for the predictors
-  #   metadat: which attribute of the base learners should be used as input for the meta learner? (should this not be fixed?)
-  #   predtype: type of prediction generated by the meta learner
-  #   cvlambda: value of lambda at which predictions are made
+predict.StaPLR <- function(object, newx, newcf = NULL, metadat = "response", predtype = "response", cvlambda = "lambda.min"){
 
   V <- length(unique(object$view))
   n <- nrow(newx)
@@ -290,6 +290,10 @@ predict.StaPLR <- function(object, newx, metadat = "response", predtype = "respo
   for (v in 1:V){
     Z[,v] <- predict(object$base[[v]], newx[, object$view == v, drop=FALSE], s = cvlambda, type = metadat)
   }
+  if(!is.null(newcf)){
+    Z <- cbind(newcf, Z)
+  }
+  colnames(Z) <- colnames(object$CVs)
   out <- predict(object$meta, Z, s = cvlambda, type = predtype)
   return(out)
 }

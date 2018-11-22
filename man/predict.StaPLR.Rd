@@ -4,13 +4,16 @@
 \alias{predict.StaPLR}
 \title{Make predictions from a "StaPLR" object.}
 \usage{
-\method{predict}{StaPLR}(object, newx, metadat = "response",
-  predtype = "response", cvlambda = "lambda.min")
+\method{predict}{StaPLR}(object, newx, newcf = NULL,
+  metadat = "response", predtype = "response",
+  cvlambda = "lambda.min")
 }
 \arguments{
 \item{object}{Fitted "StaPLR" model object.}
 
 \item{newx}{Matrix of new values for x at which predictions are to be made. Must be a matrix.}
+
+\item{newcf}{matrix of new values of correction features, if correct.for was specified during model fitting.}
 
 \item{metadat}{The attribute of the base-learners to be used as input to the meta-learner.}
 
