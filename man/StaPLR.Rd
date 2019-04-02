@@ -45,7 +45,7 @@ StaPLR(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0,
 
 \item{cvloss}{loss to use for cross-validation.}
 
-\item{metadat}{which attribute of the base learners should be used as input for the meta learner?}
+\item{metadat}{which attribute of the base learners should be used as input for the meta learner? Allowed values are "response", "link", and "class".}
 
 \item{cvlambda}{value of lambda at which cross-validated predictions are made. Defaults to the value giving minimum internal cross-validation error.}
 

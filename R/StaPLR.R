@@ -17,7 +17,7 @@
 #' @param ll2 lower limit(s) for each coefficient at the meta-level. Defaults to 0 (non-negativity constraints). Does not apply to correct.for features.
 #' @param ul2 upper limit(s) for each coefficient at the meta-level. Defaults to Inf. Does not apply to correct.for features.
 #' @param cvloss loss to use for cross-validation.
-#' @param metadat which attribute of the base learners should be used as input for the meta learner?
+#' @param metadat which attribute of the base learners should be used as input for the meta learner? Allowed values are "response", "link", and "class".
 #' @param cvlambda value of lambda at which cross-validated predictions are made. Defaults to the value giving minimum internal cross-validation error.
 #' @param cvparallel whether to use 'foreach' to fit each CV fold (DO NOT USE, USE OPTION parallel INSTEAD).
 #' @param lambda.ratio the ratio between the largest and smallest lambda value.
@@ -244,7 +244,8 @@ StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0
     "CVs" = Z,
     "x" = x,
     "y" = y,
-    "view" = view
+    "view" = view,
+    "metadat" = metadat
   )
 
   class(out) <- "StaPLR"
@@ -258,11 +259,10 @@ StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0
 
 #' Make predictions from a "StaPLR" object.
 #'
-#' Fit a two-level stacked penalized logistic regression model with a single base-learner and a single meta-learner.
+#' Make predictions from a "StaPLR" object.
 #' @param object Fitted "StaPLR" model object.
 #' @param newx Matrix of new values for x at which predictions are to be made. Must be a matrix.
-#' @param newcf matrix of new values of correction features, if correct.for was specified during model fitting.
-#' @param metadat The attribute of the base-learners to be used as input to the meta-learner.
+#' @param newcf Matrix of new values of correction features, if correct.for was specified during model fitting.
 #' @param predtype The type of prediction returned by the meta-learner.
 #' @param cvlambda Values of the penalty parameters at which predictions are to be made. Defaults to the values giving minimum cross-validation error.
 #' @return TBA.
@@ -292,10 +292,11 @@ StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0
 #' new_X <- matrix(rnorm(16), nrow=2)
 #' predict(fit, new_X)
 
-predict.StaPLR <- function(object, newx, newcf = NULL, metadat = "response", predtype = "response", cvlambda = "lambda.min"){
+predict.StaPLR <- function(object, newx, newcf = NULL, predtype = "response", cvlambda = "lambda.min"){
 
   V <- length(unique(object$view))
   n <- nrow(newx)
+  metadat <- object$metadat
   Z <- matrix(NA, n, V)
   for (v in 1:V){
     Z[,v] <- predict(object$base[[v]], newx[, object$view == v, drop=FALSE], s = cvlambda, type = metadat)
@@ -342,15 +343,92 @@ predict.StaPLR <- function(object, newx, newcf = NULL, metadat = "response", pre
 #' new_X <- matrix(rnorm(16), nrow=2)
 #' predict(fit, new_X)
 
-
 coef.StaPLR <- function(object, cvlambda = "lambda.min"){
 
   out <- list(
     "base" = lapply(object$base, function(x) coef(x, s=cvlambda)),
-    "meta" = coef(object$meta, s=cvlambda)
+    "meta" = coef(object$meta, s=cvlambda),
+    "metadat" = object$metadat
   )
 
   class(out) <- "StaPLRcoef"
 
   return(out)
+}
+
+
+#' Make predictions from a "StaPLRcoef" object.
+#'
+#' Predict using a "StaPLRcoef" object. A "StaPLRcoef" object can be considerably smaller than a full "StaPLR" object for large data sets.
+#' @param object Extracted StaPLR coefficients as a "StaPLRcoef" object.
+#' @param newx Matrix of new values for x at which predictions are to be made. Must be a matrix.
+#' @param view a vector of length nvars, where each entry is an integer describing to which view each feature corresponds.
+#' @param newcf Matrix of new values of correction features, if correct.for was specified during model fitting.
+#' @param predtype The type of prediction returned by the meta-learner. Allowed values are "response", "link", and "class".
+#' @return TBA.
+#' @keywords TBA
+#' @export
+#' @author Wouter van Loon <w.s.van.loon@fsw.leidenuniv.nl>
+#' @examples
+#' set.seed(012)
+#' n <- 1000
+#' cors <- seq(0.1,0.7,0.1)
+#' X <- matrix(NA, nrow=n, ncol=length(cors)+1)
+#' X[,1] <- rnorm(n)
+#'
+#' for(i in 1:length(cors)){
+#'   X[,i+1] <- X[,1]*cors[i] + rnorm(n, 0, sqrt(1-cors[i]^2))
+#' }
+#'
+#' beta <- c(1,0,0,0,0,0,0,0)
+#' eta <- X %*% beta
+#' p <- exp(eta)/(1+exp(eta))
+#' y <- rbinom(n, 1, p)
+#' view_index <- rep(1:(ncol(X)/2), each=2)
+#'
+#' fit <- StaPLR(X, y, view_index)
+#' coefficients <- coef(fit)
+#'
+#' new_X <- matrix(rnorm(16), nrow=2)
+#' predict(coefficients, new_X, view_index)
+
+predict.StaPLRcoef <- function(object, newx, view, newcf = NULL, predtype = "response"){
+
+  V <- length(unique(view))
+  n <- nrow(newx)
+  metadat <- object$metadat
+  Z <- matrix(NA, n, V)
+  for (v in 1:V){
+    Z[,v] <- as.matrix(cbind(1, newx[, view == v, drop=FALSE]) %*% object$base[[v]])
+  }
+
+  if(metadat == "response"){
+    Z <- 1/(1+exp(-Z))
+  }
+  else if(metadat == "class"){
+    Z <- 1*(1/(1+exp(-Z)) > 0.5)
+  }
+  else if(metadat != "link"){
+    stop("metadat should be one of 'response', 'class' or 'link'.")
+  }
+
+  if(!is.null(newcf)){
+    Z <- cbind(newcf, Z)
+  }
+
+  out <- as.matrix(cbind(1, Z) %*% object$meta)
+
+  if(predtype == "response"){
+    out <- 1/(1+exp(-out))
+  }
+  else if(predtype == "class"){
+    out <- 1*(1/(1+exp(-out)) > 0.5)
+  }
+
+  else if(predtype != "link"){
+    stop("predtype should be one of 'response', 'class' or 'link'.")
+  }
+
+  return(out)
+
 }

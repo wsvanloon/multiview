@@ -2,5 +2,6 @@
 
 S3method(coef,StaPLR)
 S3method(predict,StaPLR)
+S3method(predict,StaPLRcoef)
 export(StaPLR)
 import(foreach)
