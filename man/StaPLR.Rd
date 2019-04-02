@@ -47,7 +47,7 @@ StaPLR(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0,
 
 \item{metadat}{which attribute of the base learners should be used as input for the meta learner?}
 
-\item{cvlambda}{value of lambda at which cross-validated predictions are made.}
+\item{cvlambda}{value of lambda at which cross-validated predictions are made. Defaults to the value giving minimum internal cross-validation error.}
 
 \item{cvparallel}{whether to use 'foreach' to fit each CV fold (DO NOT USE, USE OPTION parallel INSTEAD).}
 
@@ -87,7 +87,7 @@ y <- rbinom(n, 1, p)
 view_index <- rep(1:(ncol(X)/2), each=2)
 
 fit <- StaPLR(X, y, view_index)
-coef(fit$meta, s="lambda.min")
+coef(fit)$meta
 
 new_X <- matrix(rnorm(16), nrow=2)
 predict(fit, new_X)

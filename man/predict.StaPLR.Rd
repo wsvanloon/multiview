@@ -19,7 +19,7 @@
 
 \item{predtype}{The type of prediction returned by the meta-learner.}
 
-\item{cvlambda}{Value of the penalty parameter lambda at which predictions are to be made.}
+\item{cvlambda}{Values of the penalty parameters at which predictions are to be made. Defaults to the values giving minimum cross-validation error.}
 }
 \value{
 TBA.
@@ -45,7 +45,7 @@ y <- rbinom(n, 1, p)
 view_index <- rep(1:(ncol(X)/2), each=2)
 
 fit <- StaPLR(X, y, view_index)
-coef(fit$meta, s="lambda.min")
+coef(fit)$meta
 
 new_X <- matrix(rnorm(16), nrow=2)
 predict(fit, new_X)

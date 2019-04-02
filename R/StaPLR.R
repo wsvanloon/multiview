@@ -18,7 +18,7 @@
 #' @param ul2 upper limit(s) for each coefficient at the meta-level. Defaults to Inf. Does not apply to correct.for features.
 #' @param cvloss loss to use for cross-validation.
 #' @param metadat which attribute of the base learners should be used as input for the meta learner?
-#' @param cvlambda value of lambda at which cross-validated predictions are made.
+#' @param cvlambda value of lambda at which cross-validated predictions are made. Defaults to the value giving minimum internal cross-validation error.
 #' @param cvparallel whether to use 'foreach' to fit each CV fold (DO NOT USE, USE OPTION parallel INSTEAD).
 #' @param lambda.ratio the ratio between the largest and smallest lambda value.
 #' @param penalty.weights (optional) a vector of length nviews, containing different penalty factors for the meta-learner. Defaults to rep(1,nviews). The penalty factor is set to 0 for correct.for features.
@@ -49,7 +49,7 @@
 #' view_index <- rep(1:(ncol(X)/2), each=2)
 #'
 #' fit <- StaPLR(X, y, view_index)
-#' coef(fit$meta, s="lambda.min")
+#' coef(fit)$meta
 #'
 #' new_X <- matrix(rnorm(16), nrow=2)
 #' predict(fit, new_X)
@@ -238,7 +238,7 @@ StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0
 
 
   # create output list
-  out = list(
+  out <- list(
     "base" = cv.base,
     "meta" = cv.meta,
     "CVs" = Z,
@@ -264,7 +264,7 @@ StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0
 #' @param newcf matrix of new values of correction features, if correct.for was specified during model fitting.
 #' @param metadat The attribute of the base-learners to be used as input to the meta-learner.
 #' @param predtype The type of prediction returned by the meta-learner.
-#' @param cvlambda Value of the penalty parameter lambda at which predictions are to be made.
+#' @param cvlambda Values of the penalty parameters at which predictions are to be made. Defaults to the values giving minimum cross-validation error.
 #' @return TBA.
 #' @keywords TBA
 #' @export
@@ -287,7 +287,7 @@ StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0
 #' view_index <- rep(1:(ncol(X)/2), each=2)
 #'
 #' fit <- StaPLR(X, y, view_index)
-#' coef(fit$meta, s="lambda.min")
+#' coef(fit)$meta
 #'
 #' new_X <- matrix(rnorm(16), nrow=2)
 #' predict(fit, new_X)
@@ -305,5 +305,52 @@ predict.StaPLR <- function(object, newx, newcf = NULL, metadat = "response", pre
   }
   colnames(Z) <- colnames(object$CVs)
   out <- predict(object$meta, Z, s = cvlambda, type = predtype)
+  return(out)
+}
+
+
+
+#' Extract coefficients from a "StaPLR" object.
+#'
+#' Extract base- and meta-level coefficients from a "StaPLR" object at the CV-optimal values of the penalty parameters.
+#' @param object Fitted "StaPLR" model object.
+#' @param cvlambda By default, the coefficients are extracted at the CV-optimal values of the penalty parameters. Choosing "lambda.1se" will extract them at the largest values within one standard error of the minima.
+#' @return TBA.
+#' @keywords TBA
+#' @export
+#' @author Wouter van Loon <w.s.van.loon@fsw.leidenuniv.nl>
+#' @examples
+#' set.seed(012)
+#' n <- 1000
+#' cors <- seq(0.1,0.7,0.1)
+#' X <- matrix(NA, nrow=n, ncol=length(cors)+1)
+#' X[,1] <- rnorm(n)
+#'
+#' for(i in 1:length(cors)){
+#'   X[,i+1] <- X[,1]*cors[i] + rnorm(n, 0, sqrt(1-cors[i]^2))
+#' }
+#'
+#' beta <- c(1,0,0,0,0,0,0,0)
+#' eta <- X %*% beta
+#' p <- exp(eta)/(1+exp(eta))
+#' y <- rbinom(n, 1, p)
+#' view_index <- rep(1:(ncol(X)/2), each=2)
+#'
+#' fit <- StaPLR(X, y, view_index)
+#' coef(fit)$meta
+#'
+#' new_X <- matrix(rnorm(16), nrow=2)
+#' predict(fit, new_X)
+
+
+coef.StaPLR <- function(object, cvlambda = "lambda.min"){
+
+  out <- list(
+    "base" = lapply(object$base, function(x) coef(x, s=cvlambda)),
+    "meta" = coef(object$meta, s=cvlambda)
+  )
+
+  class(out) <- "StaPLRcoef"
+
   return(out)
 }
