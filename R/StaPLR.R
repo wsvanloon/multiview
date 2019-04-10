@@ -121,7 +121,7 @@ StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0
         if(!is.null(seed)){
           set.seed(z.seeds[k, v])
         }
-        cvf <- glmnet::cv.glmnet(x[folds != k, view == v], y[folds != k], family = "binomial",
+        cvf <- glmnet::cv.glmnet(x[folds != k, view == v], y[folds != k], family = "binomial", nfolds = nfolds,
                                  type.measure = cvloss, alpha = alpha1,
                                  standardize = std.base, lower.limits = ll1,
                                  upper.limits = ul1, parallel = cvparallel, lambda.min.ratio = lambda.ratio)
@@ -141,12 +141,12 @@ StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0
       set.seed(meta.seed)
     }
     if(is.null(correct.for) && is.null(penalty.weights)){
-      cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", type.measure = cvloss, alpha = alpha2,
+      cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", nfolds = nfolds, type.measure = cvloss, alpha = alpha2,
                                    standardize = std.meta, lower.limits = ll2,
                                    upper.limits = ul2, parallel = cvparallel, lambda.min.ratio=lambda.ratio)
     }
     else if(is.null(correct.for) && !is.null(penalty.weights)){
-      cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", type.measure = cvloss, alpha = alpha2,
+      cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", nfolds = nfolds, type.measure = cvloss, alpha = alpha2,
                                    standardize = std.meta, lower.limits = ll2,
                                    upper.limits = ul2, parallel = cvparallel, lambda.min.ratio=lambda.ratio, penalty.factor=penalty.weights)
     }
@@ -160,7 +160,7 @@ StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0
       ll2 <- c(rep(-Inf, ncol(correct.for)), rep(ll2, ncol(Z)))
       ul2 <- c(rep(Inf, ncol(correct.for)), rep(ul2, ncol(Z)))
       Z <- cbind(correct.for, Z)
-      cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", type.measure = cvloss, alpha = alpha2,
+      cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", nfolds = nfolds, type.measure = cvloss, alpha = alpha2,
                                    standardize = std.meta, lower.limits = ll2,
                                    upper.limits = ul2, parallel = cvparallel, lambda.min.ratio=lambda.ratio, penalty.factor=penalty.weights)
     }
@@ -194,7 +194,7 @@ StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0
         if(!is.null(seed)){
           set.seed(z.seeds[k, v])
         }
-        cvf <- glmnet::cv.glmnet(x[folds != k, view == v], y[folds != k], family = "binomial",
+        cvf <- glmnet::cv.glmnet(x[folds != k, view == v], y[folds != k], family = "binomial", nfolds = nfolds,
                                  type.measure = cvloss, alpha = alpha1,
                                  standardize = std.base, lower.limits = ll1,
                                  upper.limits = ul1, parallel = cvparallel, lambda.min.ratio = lambda.ratio)
@@ -211,12 +211,12 @@ StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0
       set.seed(meta.seed)
     }
     if(is.null(correct.for) && is.null(penalty.weights)){
-      cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", type.measure = cvloss, alpha = alpha2,
+      cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", nfolds = nfolds, type.measure = cvloss, alpha = alpha2,
                                    standardize = std.meta, lower.limits = ll2,
                                    upper.limits = ul2, parallel = cvparallel, lambda.min.ratio=lambda.ratio)
     }
     else if(is.null(correct.for) && !is.null(penalty.weights)){
-      cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", type.measure = cvloss, alpha = alpha2,
+      cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", nfolds = nfolds, type.measure = cvloss, alpha = alpha2,
                                    standardize = std.meta, lower.limits = ll2,
                                    upper.limits = ul2, parallel = cvparallel, lambda.min.ratio=lambda.ratio, penalty.factor=penalty.weights)
     }
@@ -230,7 +230,7 @@ StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0
       ll2 <- c(rep(-Inf, ncol(correct.for)), rep(ll2, ncol(Z)))
       ul2 <- c(rep(Inf, ncol(correct.for)), rep(ul2, ncol(Z)))
       Z <- cbind(correct.for, Z)
-      cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", type.measure = cvloss, alpha = alpha2,
+      cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", nfolds = nfolds, type.measure = cvloss, alpha = alpha2,
                                    standardize = std.meta, lower.limits = ll2,
                                    upper.limits = ul2, parallel = cvparallel, lambda.min.ratio=lambda.ratio, penalty.factor=penalty.weights)
     }
