@@ -10,7 +10,7 @@ StaPLR(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0,
   cvloss = "deviance", metadat = "response", cvlambda = "lambda.min",
   cvparallel = FALSE, lambda.ratio = 0.01, penalty.weights = NULL,
   parallel = FALSE, skip.fdev = FALSE, skip.version = FALSE,
-  progress = TRUE)
+  skip.meta = FALSE, progress = TRUE)
 }
 \arguments{
 \item{x}{input matrix of dimension nobs x nvars}
@@ -60,6 +60,8 @@ StaPLR(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0,
 \item{skip.fdev}{whether to skip checking if the fdev parameter is set to zero.}
 
 \item{skip.version}{whether to skip checking the version of the glmnet package.}
+
+\item{skip.meta}{whether to skip training the metalearner.}
 
 \item{progress}{whether to show a progress bar (only supported when parallel = FALSE).}
 }

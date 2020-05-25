@@ -25,6 +25,7 @@
 #' @param parallel whether to use foreach to fit the base-learners and obtain the cross-validated predictions in parallel. Executes sequentially unless a parallel backend is registered beforehand.
 #' @param skip.fdev whether to skip checking if the fdev parameter is set to zero.
 #' @param skip.version whether to skip checking the version of the glmnet package.
+#' @param skip.meta whether to skip training the metalearner.
 #' @param progress whether to show a progress bar (only supported when parallel = FALSE).
 #' @return TBA.
 #' @keywords TBA
@@ -57,7 +58,7 @@
 StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0, alpha2 = 1, nfolds = 5, seed = NULL,
                       std.base = FALSE, std.meta = FALSE, ll1 = -Inf, ul1 = Inf,
                       ll2 = 0, ul2 = Inf, cvloss = "deviance", metadat = "response", cvlambda = "lambda.min",
-                      cvparallel = FALSE, lambda.ratio = 0.01, penalty.weights = NULL, parallel = FALSE, skip.fdev = FALSE, skip.version = FALSE, progress = TRUE){
+                      cvparallel = FALSE, lambda.ratio = 0.01, penalty.weights = NULL, parallel = FALSE, skip.fdev = FALSE, skip.version = FALSE, skip.meta = FALSE, progress = TRUE){
 
   # Check if glmnet.control parameter fdev is set to zero.
   if(skip.fdev == FALSE){
@@ -78,6 +79,11 @@ StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0
   # object initialization
   V <- length(unique(view))
   n <- length(y)
+
+  if(V==1 && !skip.meta){
+    warning("Only 1 view was provided. Training the meta-learner will be skipped!")
+    skip.meta <- TRUE
+  }
 
   # SEQUENTIAL PROCESSING
   if(parallel == FALSE){
@@ -140,7 +146,11 @@ StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0
     if(!is.null(seed)){
       set.seed(meta.seed)
     }
-    if(is.null(correct.for) && is.null(penalty.weights)){
+    if(skip.meta == TRUE){
+      cv.meta <- NULL
+      message("\n SKIPPED")
+    }
+    else if(is.null(correct.for) && is.null(penalty.weights)){
       cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", nfolds = nfolds, type.measure = cvloss, alpha = alpha2,
                                    standardize = std.meta, lower.limits = ll2,
                                    upper.limits = ul2, parallel = cvparallel, lambda.min.ratio=lambda.ratio)
@@ -210,7 +220,11 @@ StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0
     if(!is.null(seed)){
       set.seed(meta.seed)
     }
-    if(is.null(correct.for) && is.null(penalty.weights)){
+    if(skip.meta == TRUE){
+      cv.meta <- NULL
+      message("SKIPPED")
+    }
+    else if(is.null(correct.for) && is.null(penalty.weights)){
       cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", nfolds = nfolds, type.measure = cvloss, alpha = alpha2,
                                    standardize = std.meta, lower.limits = ll2,
                                    upper.limits = ul2, parallel = cvparallel, lambda.min.ratio=lambda.ratio)
