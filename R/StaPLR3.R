@@ -2,9 +2,10 @@
 
 StaPLR3 <- function(X, y , views, alphas, nfolds=10){
 
-  base_learners <- StaPLR(X, y, view=views[,1], alpha1 = alphas[1], alpha2 = alphas[2], skip.meta=FALSE)
+  base_learners <- StaPLR(X, y, view=views[,1], alpha1 = alphas[1], alpha2 = alphas[2], skip.meta=TRUE, ll1 = -Inf, ul1 = Inf)
 
-  trans_learners <- StaPLR(base_learners$CVs, y, view=condense(views, level=2), alpha1 = alphas[2], alpha2 = alphas[3])
+  trans_learners <- StaPLR(base_learners$CVs, y, view=condense(views, level=2), alpha1 = alphas[2], alpha2 = alphas[3], ll1 = 0, ul1 = Inf,
+                           ll2 = 0, ul2 = Inf)
 
   out <- list(base=base_learners$base,
               trans=trans_learners$base,
