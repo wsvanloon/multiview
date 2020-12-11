@@ -1,5 +1,8 @@
 MVS <- function(X, y, view, levels){
 
+  # Train base-learners
+
+
 }
 
 # At the FIRST LEVEL, we should have:
