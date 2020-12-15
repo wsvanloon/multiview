@@ -17,6 +17,8 @@ StaPLR3 <- function(X, y , views, alphas, nfolds=10){
               views1=base_learners$view,
               views2=trans_learners$view)
 
+  class(out) <- "StaPLR3"
+
   return(out)
 }
 
@@ -32,6 +34,31 @@ condense <- function(views, level){
   return(condensed_views)
 }
 
+
+predict.StaPLR3 <- function(object, newx, newcf = NULL, predtype = "response", cvlambda = "lambda.min"){
+
+  V1 <- length(unique(object$views1))
+  n <- nrow(newx)
+  metadat <- "response" # THIS SHOULD INHERIT FROM STAPLR3 OBJECT INSTEAD!
+  Z1 <- matrix(NA, n, V1)
+  for (v in 1:V1){
+    Z1[,v] <- predict(object$base[[v]], newx[, object$views1 == v, drop=FALSE], s = cvlambda, type = metadat)
+  }
+  # if(!is.null(newcf)){
+  #   Z <- cbind(newcf, Z)
+  # }
+  colnames(Z1) <- colnames(object$CVs)
+
+  V2 <- length(unique(object$views2))
+  Z2 <- matrix(NA, n, V2)
+  for (v in 1:V2){
+    Z2[,v] <- predict(object$trans[[v]], Z1[, object$views2 == v, drop=FALSE], s = cvlambda, type = metadat)
+  }
+
+  out <- predict(object$meta, Z2, s = cvlambda, type = predtype)
+  return(out)
+
+}
 
 # TEST DATA
 # n <- 1000
