@@ -73,7 +73,7 @@
 StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0, alpha2 = 1, nfolds = 5, seed = NULL,
                       std.base = FALSE, std.meta = FALSE, ll1 = -Inf, ul1 = Inf,
                       ll2 = 0, ul2 = Inf, cvloss = "deviance", metadat = "response", cvlambda = "lambda.min",
-                      cvparallel = FALSE, lambda.ratio = 0.01, penalty.weights = NULL, parallel = FALSE, skip.fdev = FALSE, skip.version = FALSE, skip.meta = FALSE, progress = TRUE){
+                      cvparallel = FALSE, lambda.ratio = 0.01, penalty.weights = NULL, parallel = FALSE, skip.fdev = FALSE, skip.version = FALSE, skip.meta = FALSE, skip.cv = FALSE, progress = TRUE){
 
   # Check if glmnet.control parameter fdev is set to zero.
   if(skip.fdev == FALSE){
@@ -129,30 +129,36 @@ StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0
                         upper.limits = ul1, parallel = cvparallel, lambda.min.ratio = lambda.ratio)
     }
 
-    if(progress == TRUE){
-      message("\n Calculating cross-validated predictions...")
-      pb <- txtProgressBar(min=0, max=V*nfolds, style=3)
-    }
-
-    Z <- foreach(v=(1:V), .combine=cbind) %:%
-      foreach(k=(1:nfolds), .combine="+") %do% {
-        if(progress == TRUE){
-          setTxtProgressBar(pb, getTxtProgressBar(pb)+1)
-        }
-        if(!is.null(seed)){
-          set.seed(z.seeds[k, v])
-        }
-        cvf <- glmnet::cv.glmnet(x[folds != k, view == v], y[folds != k], family = "binomial", nfolds = nfolds,
-                                 type.measure = cvloss, alpha = alpha1,
-                                 standardize = std.base, lower.limits = ll1,
-                                 upper.limits = ul1, parallel = cvparallel, lambda.min.ratio = lambda.ratio)
-        newy <- rep(0, length(y))
-        newy[folds == k] <- predict(cvf, newx = x[folds == k, view == v], s = cvlambda, type = metadat)
-        return(newy)
+    if(!skip.cv){
+      if(progress == TRUE){
+        message("\n Calculating cross-validated predictions...")
+        pb <- txtProgressBar(min=0, max=V*nfolds, style=3)
       }
-    dimnames(Z) <- NULL
-    if(!is.null(view.names)){
-      colnames(Z) <- view.names
+
+      Z <- foreach(v=(1:V), .combine=cbind) %:%
+        foreach(k=(1:nfolds), .combine="+") %do% {
+          if(progress == TRUE){
+            setTxtProgressBar(pb, getTxtProgressBar(pb)+1)
+          }
+          if(!is.null(seed)){
+            set.seed(z.seeds[k, v])
+          }
+          cvf <- glmnet::cv.glmnet(x[folds != k, view == v], y[folds != k], family = "binomial", nfolds = nfolds,
+                                   type.measure = cvloss, alpha = alpha1,
+                                   standardize = std.base, lower.limits = ll1,
+                                   upper.limits = ul1, parallel = cvparallel, lambda.min.ratio = lambda.ratio)
+          newy <- rep(0, length(y))
+          newy[folds == k] <- predict(cvf, newx = x[folds == k, view == v], s = cvlambda, type = metadat)
+          return(newy)
+        }
+      dimnames(Z) <- NULL
+      if(!is.null(view.names)){
+        colnames(Z) <- view.names
+      }
+    }
+    else{
+      Z <- NULL
+      skip.meta <- TRUE
     }
 
     if(progress == TRUE && skip.meta == FALSE){
@@ -213,22 +219,28 @@ StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0
                         upper.limits = ul1, parallel = cvparallel, lambda.min.ratio = lambda.ratio)
     }
 
-    Z <- foreach(v=(1:V), .combine=cbind) %:%
-      foreach(k=(1:nfolds), .combine="+") %dopar% {
-        if(!is.null(seed)){
-          set.seed(z.seeds[k, v])
+    if(!skip.cv){
+      Z <- foreach(v=(1:V), .combine=cbind) %:%
+        foreach(k=(1:nfolds), .combine="+") %dopar% {
+          if(!is.null(seed)){
+            set.seed(z.seeds[k, v])
+          }
+          cvf <- glmnet::cv.glmnet(x[folds != k, view == v], y[folds != k], family = "binomial", nfolds = nfolds,
+                                   type.measure = cvloss, alpha = alpha1,
+                                   standardize = std.base, lower.limits = ll1,
+                                   upper.limits = ul1, parallel = cvparallel, lambda.min.ratio = lambda.ratio)
+          newy <- rep(0, length(y))
+          newy[folds == k] <- predict(cvf, newx = x[folds == k, view == v], s = cvlambda, type = metadat)
+          return(newy)
         }
-        cvf <- glmnet::cv.glmnet(x[folds != k, view == v], y[folds != k], family = "binomial", nfolds = nfolds,
-                                 type.measure = cvloss, alpha = alpha1,
-                                 standardize = std.base, lower.limits = ll1,
-                                 upper.limits = ul1, parallel = cvparallel, lambda.min.ratio = lambda.ratio)
-        newy <- rep(0, length(y))
-        newy[folds == k] <- predict(cvf, newx = x[folds == k, view == v], s = cvlambda, type = metadat)
-        return(newy)
+      dimnames(Z) <- NULL
+      if(!is.null(view.names)){
+        colnames(Z) <- view.names
       }
-    dimnames(Z) <- NULL
-    if(!is.null(view.names)){
-      colnames(Z) <- view.names
+    }
+    else{
+      Z <- NULL
+      skip.meta <- TRUE
     }
 
     if(!is.null(seed)){
