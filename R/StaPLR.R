@@ -41,6 +41,7 @@
 #' @param skip.fdev whether to skip checking if the fdev parameter is set to zero.
 #' @param skip.version whether to skip checking the version of the glmnet package.
 #' @param skip.meta whether to skip training the metalearner.
+#' @param skip.cv whether to skip generating the cross-validated predictions.
 #' @param progress whether to show a progress bar (only supported when parallel = FALSE).
 #' @return TBA.
 #' @keywords TBA
