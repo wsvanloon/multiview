@@ -155,7 +155,7 @@ StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0
       colnames(Z) <- view.names
     }
 
-    if(progress == TRUE){
+    if(progress == TRUE && skip.meta=FALSE){
       message("\n Training meta learner...")
     }
     if(!is.null(seed)){
@@ -163,7 +163,6 @@ StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0
     }
     if(skip.meta == TRUE){
       cv.meta <- NULL
-      message("\n SKIPPED")
     }
     else if(is.null(correct.for) && is.null(penalty.weights)){
       cv.meta <- glmnet::cv.glmnet(Z, y, family= "binomial", nfolds = nfolds, type.measure = cvloss, alpha = alpha2,
