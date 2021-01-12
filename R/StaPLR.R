@@ -155,7 +155,7 @@ StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0
       colnames(Z) <- view.names
     }
 
-    if(progress == TRUE && skip.meta=FALSE){
+    if(progress == TRUE && skip.meta == FALSE){
       message("\n Training meta learner...")
     }
     if(!is.null(seed)){
