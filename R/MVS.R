@@ -1,7 +1,14 @@
-MVS <- function(X, y, view, levels){
+MVS <- function(X, y, views, levels, etc){
 
-  # Train base-learners
-
+  # pred_functions <- vector("list", length=ncol(views)+1)
+  #
+  # pred_functions[[1]] <- learn(X, y, views, etc)
+  #
+  # for(i in 2:ncol(views)){
+  #   trans_learners[[i]] <- learn(pred_functions[[i-1]]$CVs, y, views, etc)
+  # }
+  #
+  # pred_functions[[ncol(views)+1]] <- learn(pred_functions[[ncol(views)]]$CVs, y, views, etc, generate_CVs=FALSE)
 
 }
 
