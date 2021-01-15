@@ -1,14 +1,19 @@
-MVS <- function(X, y, views, levels, etc){
+MVS <- function(X, y, views, type="StaPLR", levels=2, alphas=c(0,1)){
 
-  # pred_functions <- vector("list", length=ncol(views)+1)
-  #
-  # pred_functions[[1]] <- learn(X, y, views, etc)
-  #
-  # for(i in 2:ncol(views)){
-  #   trans_learners[[i]] <- learn(pred_functions[[i-1]]$CVs, y, views, etc)
-  # }
-  #
-  # pred_functions[[ncol(views)+1]] <- learn(pred_functions[[ncol(views)]]$CVs, y, views, etc, generate_CVs=FALSE)
+  pred_functions <- vector("list", length=ncol(views)+1)
+
+  pred_functions[[1]] <- learn(X=X, y=y, views=views[,1], type=type, args=list(alpha1 = alphas[1]))
+
+  if(levels > 2){
+    for(i in 2:ncol(views)){
+      trans_learners[[i]] <- learn(pred_functions[[i-1]]$CVs, y, views=condense(views, level=i), type=type, args=list(alpha1 = alphas[i]))
+    }
+  }
+
+  pred_functions[[ncol(views)+1]] <- learn(pred_functions[[ncol(views)]]$CVs, y,
+                                           views=1:ncol(pred_functions[[ncol(views)]]$CVs),
+                                           type=type, args=list(alpha1 = alphas[ncol(views)+1]),
+                                           generate.CVs=FALSE)
 
 }
 
