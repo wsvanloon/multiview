@@ -3,7 +3,7 @@
 # predictions. It uses switch() to apply the correct learner, depending on
 # argument 'type'.
 
-learn <- function(X, y, views, type, args=NULL, generate.CVs=TRUE){
+learn <- function(X, y, views, type, generate.CVs=TRUE, ...){
   switch(type,
-         StaPLR = StaPLR(X, y, view=views, alpha1=args$alpha1, skip.meta = TRUE, skip.cv = !generate.CVs))
+         StaPLR = StaPLR(X, y, view=views, skip.meta = TRUE, skip.cv = !generate.CVs, ...))
 }
