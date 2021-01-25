@@ -282,8 +282,8 @@ StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0
     "base" = cv.base,
     "meta" = cv.meta,
     "CVs" = Z,
-    "x" = x,
-    "y" = y,
+    #"x" = x,
+    #"y" = y,
     "view" = view,
     "metadat" = metadat
   )
