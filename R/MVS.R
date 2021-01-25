@@ -30,6 +30,13 @@ MVS <- function(X, y, views, type="StaPLR", levels=2, alphas=c(0,1), progress=TR
                                            generate.CVs=FALSE, seed=seeds[ncol(views)+1],
                                            progress=progress)
 
+  for(i in 1:length(pred_functions)){
+    pred_functions[[i]]$meta <- NULL
+    names(pred_functions[[i]])[1] <- "models"
+  }
+
+  names(pred_functions) <- paste("Level", 1:(ncol(views)+1))
+
   return(pred_functions)
 
 }
