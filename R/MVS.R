@@ -1,19 +1,21 @@
-MVS <- function(X, y, views, type="StaPLR", levels=2, alphas=c(0,1)){
+MVS <- function(X, y, views, type="StaPLR", levels=2, alphas=c(0,1), seeds=NULL){
 
   pred_functions <- vector("list", length=ncol(views)+1)
 
-  pred_functions[[1]] <- learn(X=X, y=y, views=views[,1], type=type, alpha1 = alphas[1])
+  pred_functions[[1]] <- learn(X=X, y=y, views=views[,1], type=type, alpha1 = alphas[1], seed=seeds[1])
 
   if(levels > 2){
     for(i in 2:ncol(views)){
-      pred_functions[[i]] <- learn(pred_functions[[i-1]]$CVs, y, views=condense(views, level=i), type=type, alpha1 = alphas[i])
+      pred_functions[[i]] <- learn(pred_functions[[i-1]]$CVs, y,
+                                   views=condense(views, level=i), type=type,
+                                   alpha1 = alphas[i], seed=seeds[i])
     }
   }
 
   pred_functions[[ncol(views)+1]] <- learn(pred_functions[[ncol(views)]]$CVs, y,
                                            views=rep(1,ncol(pred_functions[[ncol(views)]]$CVs)),
                                            type=type, alpha1 = alphas[ncol(views)+1], ll1=0,
-                                           generate.CVs=FALSE)
+                                           generate.CVs=FALSE, seed=seeds[ncol(views)+1])
 
   return(pred_functions)
 

@@ -1,11 +1,11 @@
 # This is a quick-and-dirty script to apply StaPLR with 3 levels. Its outcome can potentially be used for automated testing of MVS later on.
 
-StaPLR3 <- function(X, y , views, alphas, nfolds=10){
+StaPLR3 <- function(X, y , views, alphas, nfolds=10, seed=NULL){
 
-  base_learners <- StaPLR(X, y, view=views[,1], alpha1 = alphas[1], alpha2 = alphas[2], skip.meta=TRUE, ll1 = -Inf, ul1 = Inf)
+  base_learners <- StaPLR(X, y, view=views[,1], alpha1 = alphas[1], alpha2 = alphas[2], skip.meta=TRUE, ll1 = -Inf, ul1 = Inf, seed=seed)
 
   trans_learners <- StaPLR(base_learners$CVs, y, view=condense(views, level=2), alpha1 = alphas[2], alpha2 = alphas[3], ll1 = 0, ul1 = Inf,
-                           ll2 = 0, ul2 = Inf)
+                           ll2 = 0, ul2 = Inf, seed=seed)
 
   out <- list(base=base_learners$base,
               trans=trans_learners$base,
