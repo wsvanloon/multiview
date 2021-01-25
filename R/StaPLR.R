@@ -114,7 +114,7 @@ StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0
     else folds <- kFolds(y, nfolds)
 
     if(progress == TRUE){
-      message("Training base-learner on each view...")
+      message("Training learner on each view...")
       pb <- txtProgressBar(min=0, max=V, style=3)
     }
     cv.base <- foreach(v=(1:V)) %do% {

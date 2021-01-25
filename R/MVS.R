@@ -1,21 +1,34 @@
-MVS <- function(X, y, views, type="StaPLR", levels=2, alphas=c(0,1), seeds=NULL){
+MVS <- function(X, y, views, type="StaPLR", levels=2, alphas=c(0,1), progress=TRUE, seeds=NULL){
 
   pred_functions <- vector("list", length=ncol(views)+1)
 
-  pred_functions[[1]] <- learn(X=X, y=y, views=views[,1], type=type, alpha1 = alphas[1], seed=seeds[1])
+  if(progress){
+    message("Level 1 \n")
+  }
+
+  pred_functions[[1]] <- learn(X=X, y=y, views=views[,1], type=type, alpha1 = alphas[1],
+                               seed=seeds[1], progress=progress)
 
   if(levels > 2){
     for(i in 2:ncol(views)){
+      if(progress){
+        message(paste("Level", i, "\n"))
+      }
       pred_functions[[i]] <- learn(pred_functions[[i-1]]$CVs, y,
                                    views=condense(views, level=i), type=type,
-                                   alpha1 = alphas[i], seed=seeds[i])
+                                   alpha1 = alphas[i], seed=seeds[i], progress=progress)
     }
+  }
+
+  if(progress){
+    message(paste("Level", ncol(views)+1, "\n"))
   }
 
   pred_functions[[ncol(views)+1]] <- learn(pred_functions[[ncol(views)]]$CVs, y,
                                            views=rep(1,ncol(pred_functions[[ncol(views)]]$CVs)),
                                            type=type, alpha1 = alphas[ncol(views)+1], ll1=0,
-                                           generate.CVs=FALSE, seed=seeds[ncol(views)+1])
+                                           generate.CVs=FALSE, seed=seeds[ncol(views)+1],
+                                           progress=progress)
 
   return(pred_functions)
 
