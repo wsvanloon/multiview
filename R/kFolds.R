@@ -1,5 +1,5 @@
 # This file is part of multiview: Methods for High-Dimensional Multi-View Learning
-# Copyright (C) 2018-2020  Wouter van Loon
+# Copyright (C) 2018-2021  Wouter van Loon
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
