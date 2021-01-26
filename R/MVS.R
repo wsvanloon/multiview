@@ -51,10 +51,36 @@ MVS <- function(X, y, views, type="StaPLR", levels=2, alphas=c(0,1), progress=TR
   }
 
   names(pred_functions) <- paste("Level", 1:(ncol(views)+1))
+  attr(pred_functions, "type") <- type
+  class(pred_functions) <- "MVS"
 
   return(pred_functions)
 
 }
+
+
+coef.MVS <- function(object, cvlambda = "lambda.min"){
+
+  out <- vector("list", length(object))
+
+  for(i in 1:length(object)){
+    out[[i]] <- vector("list", length(object[[i]]$models))
+  }
+
+  for(i in 1:length(object)){
+    for(j in 1:length(object[[i]]$models)){
+      out[[i]][[j]] <- coef(object[[i]]$models[[j]], s=cvlambda)
+    }
+  }
+  attr(out, "type") <- attr(object, "type")
+  class(out) <- "MVScoef"
+
+  return(out)
+}
+
+# predict.MVS <- function(object, newx, predtype = "response", cvlambda = "lambda.min"){
+#
+# }
 
 # At the FIRST LEVEL, we should have:
 # - A loop to learn the base-learner fv from each X[, views=v] THAT IS INCLUDED AT THIS LEVEL
