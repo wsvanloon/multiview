@@ -13,7 +13,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-MVS <- function(X, y, views, type="StaPLR", levels=2, alphas=c(0,1), progress=TRUE, seeds=NULL){
+#' Multi-View Stacking
+#'
+#' Fit a multi-view stacking model with two or more levels.
+#' @param x input matrix of dimension nobs x nvars.
+#' @param y outcome vector of length nobs.
+#' @param views a matrix of dimension nvars x (levels - 1), where each entry is an integer describing to which view each feature corresponds.
+#' @param type the type of MVS model to be fitted. Currently only type "StaPLR" is supported.
+#' @param levels an integer >= 2, specifying the number of levels in the MVS procedure.
+#' @param alphas a vector specifying the value of the alpha parameter to use at each level.
+#' @param parallel whether to use foreach to fit the learners and obtain the cross-validated predictions at each level in parallel. Executes sequentially unless a parallel back-end is registered beforehand.
+#' @param seeds (optional) a vector specifying the seed to use at each level.
+#' @param progress whether to show a progress bar (only supported when parallel = FALSE).
+#' @param ... additional arguments to pass to the learning algorithm. See e.g. ?StaPLR. Note that these arguments are passed to the the learner at every level of the MVS procedure.
+
+
+MVS <- function(x, y, views, type="StaPLR", levels=2, alphas=c(0,1), parallel=FALSE, seeds=NULL, progress=TRUE, ...){
 
   pred_functions <- vector("list", length=ncol(views)+1)
 
@@ -21,8 +36,8 @@ MVS <- function(X, y, views, type="StaPLR", levels=2, alphas=c(0,1), progress=TR
     message("Level 1 \n")
   }
 
-  pred_functions[[1]] <- learn(X=X, y=y, views=views[,1], type=type, alpha1 = alphas[1],
-                               seed=seeds[1], progress=progress)
+  pred_functions[[1]] <- learn(X=x, y=y, views=views[,1], type=type, alpha1 = alphas[1],
+                               seed=seeds[1], progress=progress, parallel=parallel, ...)
 
   if(levels > 2){
     for(i in 2:ncol(views)){
@@ -31,7 +46,7 @@ MVS <- function(X, y, views, type="StaPLR", levels=2, alphas=c(0,1), progress=TR
       }
       pred_functions[[i]] <- learn(pred_functions[[i-1]]$CVs, y,
                                    views=condense(views, level=i), type=type,
-                                   alpha1 = alphas[i], seed=seeds[i], progress=progress)
+                                   alpha1 = alphas[i], seed=seeds[i], progress=progress, parallel=parallel, ...)
     }
   }
 
@@ -43,7 +58,7 @@ MVS <- function(X, y, views, type="StaPLR", levels=2, alphas=c(0,1), progress=TR
                                            views=rep(1,ncol(pred_functions[[ncol(views)]]$CVs)),
                                            type=type, alpha1 = alphas[ncol(views)+1], ll1=0,
                                            generate.CVs=FALSE, seed=seeds[ncol(views)+1],
-                                           progress=progress)
+                                           progress=progress, parallel=parallel, ...)
 
   for(i in 1:length(pred_functions)){
     pred_functions[[i]]$meta <- NULL
