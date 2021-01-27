@@ -59,6 +59,31 @@ MVS <- function(X, y, views, type="StaPLR", levels=2, alphas=c(0,1), progress=TR
 }
 
 
+predict.MVS <- function(object, newx, predtype = "response", cvlambda = "lambda.min"){
+
+  x <- newx
+
+  for(i in 1:length(object)){
+
+    Z <- matrix(NA, nrow=nrow(newx), ncol=length(object[[i]]$models))
+
+    if(i < length(object)){
+      pt <- object[[i]]$metadat
+    }
+    else pt <- predtype
+
+    for(j in 1:ncol(Z)){
+      Z[,j] <- predict(object[[i]]$models[[j]], x[, object[[i]]$view == j, drop=FALSE],
+                       s = cvlambda, type = pt)
+    }
+    x <- Z
+  }
+
+  return(x)
+
+}
+
+
 coef.MVS <- function(object, cvlambda = "lambda.min"){
 
   out <- vector("list", length(object))
