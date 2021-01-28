@@ -43,7 +43,7 @@
 #' @param skip.meta whether to skip training the metalearner.
 #' @param skip.cv whether to skip generating the cross-validated predictions.
 #' @param progress whether to show a progress bar (only supported when parallel = FALSE).
-#' @return TBA.
+#' @return An object with S3 class "StaPLR".
 #' @keywords TBA
 #' @import foreach
 #' @export
@@ -305,7 +305,7 @@ StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0
 #' @param newcf Matrix of new values of correction features, if correct.for was specified during model fitting.
 #' @param predtype The type of prediction returned by the meta-learner.
 #' @param cvlambda Values of the penalty parameters at which predictions are to be made. Defaults to the values giving minimum cross-validation error.
-#' @return TBA.
+#' @return A matrix of predictions.
 #' @keywords TBA
 #' @export
 #' @author Wouter van Loon <w.s.van.loon@fsw.leidenuniv.nl>
@@ -356,7 +356,7 @@ predict.StaPLR <- function(object, newx, newcf = NULL, predtype = "response", cv
 #' Extract base- and meta-level coefficients from a "StaPLR" object at the CV-optimal values of the penalty parameters.
 #' @param object Fitted "StaPLR" model object.
 #' @param cvlambda By default, the coefficients are extracted at the CV-optimal values of the penalty parameters. Choosing "lambda.1se" will extract them at the largest values within one standard error of the minima.
-#' @return TBA.
+#' @return An object with S3 class "StaPLRcoef".
 #' @keywords TBA
 #' @export
 #' @author Wouter van Loon <w.s.van.loon@fsw.leidenuniv.nl>
@@ -405,7 +405,7 @@ coef.StaPLR <- function(object, cvlambda = "lambda.min"){
 #' @param view a vector of length nvars, where each entry is an integer describing to which view each feature corresponds.
 #' @param newcf Matrix of new values of correction features, if correct.for was specified during model fitting.
 #' @param predtype The type of prediction returned by the meta-learner. Allowed values are "response", "link", and "class".
-#' @return TBA.
+#' @return A matrix of predictions.
 #' @keywords TBA
 #' @export
 #' @author Wouter van Loon <w.s.van.loon@fsw.leidenuniv.nl>

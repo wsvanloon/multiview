@@ -4,13 +4,35 @@
 \alias{StaPLR}
 \title{Stacked Penalized Logistic Regression}
 \usage{
-StaPLR(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0,
-  alpha2 = 1, nfolds = 5, seed = NULL, std.base = FALSE,
-  std.meta = FALSE, ll1 = -Inf, ul1 = Inf, ll2 = 0, ul2 = Inf,
-  cvloss = "deviance", metadat = "response", cvlambda = "lambda.min",
-  cvparallel = FALSE, lambda.ratio = 0.01, penalty.weights = NULL,
-  parallel = FALSE, skip.fdev = FALSE, skip.version = FALSE,
-  skip.meta = FALSE, progress = TRUE)
+StaPLR(
+  x,
+  y,
+  view,
+  view.names = NULL,
+  correct.for = NULL,
+  alpha1 = 0,
+  alpha2 = 1,
+  nfolds = 5,
+  seed = NULL,
+  std.base = FALSE,
+  std.meta = FALSE,
+  ll1 = -Inf,
+  ul1 = Inf,
+  ll2 = 0,
+  ul2 = Inf,
+  cvloss = "deviance",
+  metadat = "response",
+  cvlambda = "lambda.min",
+  cvparallel = FALSE,
+  lambda.ratio = 0.01,
+  penalty.weights = NULL,
+  parallel = FALSE,
+  skip.fdev = FALSE,
+  skip.version = FALSE,
+  skip.meta = FALSE,
+  skip.cv = FALSE,
+  progress = TRUE
+)
 }
 \arguments{
 \item{x}{input matrix of dimension nobs x nvars}
@@ -63,10 +85,12 @@ StaPLR(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0,
 
 \item{skip.meta}{whether to skip training the metalearner.}
 
+\item{skip.cv}{whether to skip generating the cross-validated predictions.}
+
 \item{progress}{whether to show a progress bar (only supported when parallel = FALSE).}
 }
 \value{
-TBA.
+An object with S3 class "StaPLR".
 }
 \description{
 Fit a two-level stacked penalized logistic regression model with a single base-learner and a single meta-learner.

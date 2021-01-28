@@ -26,7 +26,7 @@
 #' @param seeds (optional) a vector specifying the seed to use at each level.
 #' @param progress whether to show a progress bar (only supported when parallel = FALSE).
 #' @param ... additional arguments to pass to the learning algorithm. See e.g. ?StaPLR. Note that these arguments are passed to the the learner at every level of the MVS procedure.
-#' @return TBA.
+#' @return An object of S3 class "MVS".
 #' @keywords TBA
 #' @import foreach
 #' @export
@@ -39,13 +39,12 @@
 #' bottom_level <- c(rep(1:3, each=15), rep(4:5, each=10), rep(6:9, each=5))
 #' views <- cbind(bottom_level, top_level)
 #' beta <- c(rep(10, 55), rep(0, 30))
-#' eta <- test_X %*% beta
+#' eta <- X %*% beta
 #' p <- 1 /(1 + exp(-eta))
 #' y <- rbinom(n, 1, p)
 #'
 #' fit <- MVS(x=X, y=y, views=views, type="StaPLR", levels=3, alphas=c(0,0,1))
 #' coefficients <- coef(fit)
-#' print(coefficients$'Level 3')
 #'
 #' new_X <- matrix(rnorm(2*85), nrow=2)
 #' predict(fit, new_X)
@@ -103,10 +102,27 @@ MVS <- function(x, y, views, type="StaPLR", levels=2, alphas=c(0,1), parallel=FA
 #' @param newx Matrix of new values for x at which predictions are to be made. Must be a matrix.
 #' @param predtype The type of prediction returned by the meta-learner. Supported are types "response", "class" and "link".
 #' @param cvlambda Values of the penalty parameters at which predictions are to be made. Defaults to the values giving minimum cross-validation error.
-#' @return TBA.
+#' @return A matrix of predictions.
 #' @keywords TBA
 #' @export
 #' @author Wouter van Loon <w.s.van.loon@fsw.leidenuniv.nl>
+#' @examples
+#' set.seed(012)
+#' n <- 1000
+#' X <- matrix(rnorm(8500), nrow=n, ncol=85)
+#' top_level <- c(rep(1,45), rep(2,20), rep(3,20))
+#' bottom_level <- c(rep(1:3, each=15), rep(4:5, each=10), rep(6:9, each=5))
+#' views <- cbind(bottom_level, top_level)
+#' beta <- c(rep(10, 55), rep(0, 30))
+#' eta <- X %*% beta
+#' p <- 1 /(1 + exp(-eta))
+#' y <- rbinom(n, 1, p)
+#'
+#' fit <- MVS(x=X, y=y, views=views, type="StaPLR", levels=3, alphas=c(0,0,1))
+#' coefficients <- coef(fit)
+#'
+#' new_X <- matrix(rnorm(2*85), nrow=2)
+#' predict(fit, new_X)
 
 predict.MVS <- function(object, newx, predtype = "response", cvlambda = "lambda.min"){
 
@@ -138,10 +154,27 @@ predict.MVS <- function(object, newx, predtype = "response", cvlambda = "lambda.
 #' Extract coefficients at each level from an "MVS" object at the CV-optimal values of the penalty parameters.
 #' @param object An object of class "MVS".
 #' @param cvlambda By default, the coefficients are extracted at the CV-optimal values of the penalty parameters. Choosing "lambda.1se" will extract them at the largest values within one standard error of the minima.
-#' @return TBA.
+#' @return An object of S3 class "MVScoef".
 #' @keywords TBA
 #' @export
 #' @author Wouter van Loon <w.s.van.loon@fsw.leidenuniv.nl>
+#' @examples
+#' set.seed(012)
+#' n <- 1000
+#' X <- matrix(rnorm(8500), nrow=n, ncol=85)
+#' top_level <- c(rep(1,45), rep(2,20), rep(3,20))
+#' bottom_level <- c(rep(1:3, each=15), rep(4:5, each=10), rep(6:9, each=5))
+#' views <- cbind(bottom_level, top_level)
+#' beta <- c(rep(10, 55), rep(0, 30))
+#' eta <- X %*% beta
+#' p <- 1 /(1 + exp(-eta))
+#' y <- rbinom(n, 1, p)
+#'
+#' fit <- MVS(x=X, y=y, views=views, type="StaPLR", levels=3, alphas=c(0,0,1))
+#' coefficients <- coef(fit)
+#'
+#' new_X <- matrix(rnorm(2*85), nrow=2)
+#' predict(fit, new_X)
 
 coef.MVS <- function(object, cvlambda = "lambda.min"){
 

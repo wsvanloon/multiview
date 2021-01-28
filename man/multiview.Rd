@@ -3,7 +3,6 @@
 \docType{package}
 \name{multiview}
 \alias{multiview}
-\alias{multiview-package}
 \title{multiview: Methods for High-Dimensional Multi-View Learning.}
 \description{
 The multiview package currently provides a function StaPLR which fits a stacked penalized logistic regression model.

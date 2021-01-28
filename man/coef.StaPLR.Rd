@@ -12,7 +12,7 @@
 \item{cvlambda}{By default, the coefficients are extracted at the CV-optimal values of the penalty parameters. Choosing "lambda.1se" will extract them at the largest values within one standard error of the minima.}
 }
 \value{
-TBA.
+An object with S3 class "StaPLRcoef".
 }
 \description{
 Extract base- and meta-level coefficients from a "StaPLR" object at the CV-optimal values of the penalty parameters.

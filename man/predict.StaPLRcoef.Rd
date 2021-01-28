@@ -4,8 +4,7 @@
 \alias{predict.StaPLRcoef}
 \title{Make predictions from a "StaPLRcoef" object.}
 \usage{
-\method{predict}{StaPLRcoef}(object, newx, view, newcf = NULL,
-  predtype = "response")
+\method{predict}{StaPLRcoef}(object, newx, view, newcf = NULL, predtype = "response")
 }
 \arguments{
 \item{object}{Extracted StaPLR coefficients as a "StaPLRcoef" object.}
@@ -19,7 +18,7 @@
 \item{predtype}{The type of prediction returned by the meta-learner. Allowed values are "response", "link", and "class".}
 }
 \value{
-TBA.
+A matrix of predictions.
 }
 \description{
 Predict using a "StaPLRcoef" object. A "StaPLRcoef" object can be considerably smaller than a full "StaPLR" object for large data sets.

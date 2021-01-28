@@ -4,8 +4,13 @@
 \alias{predict.StaPLR}
 \title{Make predictions from a "StaPLR" object.}
 \usage{
-\method{predict}{StaPLR}(object, newx, newcf = NULL,
-  predtype = "response", cvlambda = "lambda.min")
+\method{predict}{StaPLR}(
+  object,
+  newx,
+  newcf = NULL,
+  predtype = "response",
+  cvlambda = "lambda.min"
+)
 }
 \arguments{
 \item{object}{Fitted "StaPLR" model object.}
@@ -19,7 +24,7 @@
 \item{cvlambda}{Values of the penalty parameters at which predictions are to be made. Defaults to the values giving minimum cross-validation error.}
 }
 \value{
-TBA.
+A matrix of predictions.
 }
 \description{
 Make predictions from a "StaPLR" object.
