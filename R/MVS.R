@@ -26,7 +26,11 @@
 #' @param seeds (optional) a vector specifying the seed to use at each level.
 #' @param progress whether to show a progress bar (only supported when parallel = FALSE).
 #' @param ... additional arguments to pass to the learning algorithm. See e.g. ?StaPLR. Note that these arguments are passed to the the learner at every level of the MVS procedure.
-
+#' @return TBA.
+#' @keywords TBA
+#' @import foreach
+#' @export
+#' @author Wouter van Loon <w.s.van.loon@fsw.leidenuniv.nl>
 
 MVS <- function(x, y, views, type="StaPLR", levels=2, alphas=c(0,1), parallel=FALSE, seeds=NULL, progress=TRUE, ...){
 
@@ -74,6 +78,18 @@ MVS <- function(x, y, views, type="StaPLR", levels=2, alphas=c(0,1), parallel=FA
 }
 
 
+#' Make predictions from an "MVS" object.
+#'
+#' Make predictions from a "MVS" object.
+#' @param object An object of class "MVS".
+#' @param newx Matrix of new values for x at which predictions are to be made. Must be a matrix.
+#' @param predtype The type of prediction returned by the meta-learner. Supported are types "response", "class" and "link".
+#' @param cvlambda Values of the penalty parameters at which predictions are to be made. Defaults to the values giving minimum cross-validation error.
+#' @return TBA.
+#' @keywords TBA
+#' @export
+#' @author Wouter van Loon <w.s.van.loon@fsw.leidenuniv.nl>
+
 predict.MVS <- function(object, newx, predtype = "response", cvlambda = "lambda.min"){
 
   x <- newx
@@ -99,6 +115,16 @@ predict.MVS <- function(object, newx, predtype = "response", cvlambda = "lambda.
 }
 
 
+#' Extract coefficients from an "MVS" object.
+#'
+#' Extract coefficients at each level from an "MVS" object at the CV-optimal values of the penalty parameters.
+#' @param object An object of class "MVS".
+#' @param cvlambda By default, the coefficients are extracted at the CV-optimal values of the penalty parameters. Choosing "lambda.1se" will extract them at the largest values within one standard error of the minima.
+#' @return TBA.
+#' @keywords TBA
+#' @export
+#' @author Wouter van Loon <w.s.van.loon@fsw.leidenuniv.nl>
+
 coef.MVS <- function(object, cvlambda = "lambda.min"){
 
   out <- vector("list", length(object))
@@ -117,29 +143,3 @@ coef.MVS <- function(object, cvlambda = "lambda.min"){
 
   return(out)
 }
-
-# predict.MVS <- function(object, newx, predtype = "response", cvlambda = "lambda.min"){
-#
-# }
-
-# At the FIRST LEVEL, we should have:
-# - A loop to learn the base-learner fv from each X[, views=v] THAT IS INCLUDED AT THIS LEVEL
-# - A loop to obtain the cross-validated predictions for each of those fv, collected in matrix Z1
-
-# Then at the next level, we should have:
-# - A loop to learn the intermediate classifier from each Z1[, something_something]
-# - A loop to obtain the cross-validated predictions for each of the intermediate classifiers, collected in Z2
-
-# Then at the last level, we should have:
-# - A loop to train the meta-learner on Z2 (or Z3, or Z4, whatever the highest level is)
-
-# The learners differ on the basis of their INPUT and OUTPUT
-# Base-learner:         INPUT: DATA
-#                       OUTPUT: INPUT TO OTHER ALGORITHM
-# Transitional learner: INPUT: OUTPUT OF OTHER ALGORITHM
-#                       OUTPUT: INPUT FOR OTHER ALGORITHM
-# Meta leaner:          INPUT: OUTPUT OF ANOTHER ALGORITHM
-#                       OUTPUT: PREDICTION
-
-
-# Transitional learner: A learner that takes as input the output of another learner, and outputs the input of another learner.
