@@ -18,7 +18,7 @@ An object of S3 class "MVScoef".
 Extract coefficients at each level from an "MVS" object at the CV-optimal values of the penalty parameters.
 }
 \examples{
-set.seed(012)
+set.seed(123)
 n <- 1000
 X <- matrix(rnorm(8500), nrow=n, ncol=85)
 top_level <- c(rep(1,45), rep(2,20), rep(3,20))
@@ -29,7 +29,7 @@ eta <- X \%*\% beta
 p <- 1 /(1 + exp(-eta))
 y <- rbinom(n, 1, p)
 
-fit <- MVS(x=X, y=y, views=views, type="StaPLR", levels=3, alphas=c(0,0,1))
+fit <- MVS(x=X, y=y, views=views, type="StaPLR", levels=3, alphas=c(0,1,1), nnc=c(0,1,1))
 coefficients <- coef(fit)
 
 new_X <- matrix(rnorm(2*85), nrow=2)

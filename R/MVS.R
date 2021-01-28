@@ -22,6 +22,7 @@
 #' @param type the type of MVS model to be fitted. Currently only type "StaPLR" is supported.
 #' @param levels an integer >= 2, specifying the number of levels in the MVS procedure.
 #' @param alphas a vector specifying the value of the alpha parameter to use at each level.
+#' @param nnc a binary vector specifying whether to apply nonnegativity constraints or not (1/0) at each level.
 #' @param parallel whether to use foreach to fit the learners and obtain the cross-validated predictions at each level in parallel. Executes sequentially unless a parallel back-end is registered beforehand.
 #' @param seeds (optional) a vector specifying the seed to use at each level.
 #' @param progress whether to show a progress bar (only supported when parallel = FALSE).
@@ -43,21 +44,22 @@
 #' p <- 1 /(1 + exp(-eta))
 #' y <- rbinom(n, 1, p)
 #'
-#' fit <- MVS(x=X, y=y, views=views, type="StaPLR", levels=3, alphas=c(0,0,1))
+#' fit <- MVS(x=X, y=y, views=views, type="StaPLR", levels=3, alphas=c(0,1,1), nnc=c(0,1,1))
 #' coefficients <- coef(fit)
 #'
 #' new_X <- matrix(rnorm(2*85), nrow=2)
 #' predict(fit, new_X)
 
-MVS <- function(x, y, views, type="StaPLR", levels=2, alphas=c(0,1), parallel=FALSE, seeds=NULL, progress=TRUE, ...){
+MVS <- function(x, y, views, type="StaPLR", levels=2, alphas=c(0,1), nnc=c(0,1), parallel=FALSE, seeds=NULL, progress=TRUE, ...){
 
   pred_functions <- vector("list", length=ncol(views)+1)
+  ll <- c(-Inf, 0)[nnc + 1]
 
   if(progress){
     message("Level 1 \n")
   }
 
-  pred_functions[[1]] <- learn(X=x, y=y, views=views[,1], type=type, alpha1 = alphas[1],
+  pred_functions[[1]] <- learn(X=x, y=y, views=views[,1], type=type, alpha1 = alphas[1], ll1=ll[1],
                                seed=seeds[1], progress=progress, parallel=parallel, ...)
 
   if(levels > 2){
@@ -67,7 +69,8 @@ MVS <- function(x, y, views, type="StaPLR", levels=2, alphas=c(0,1), parallel=FA
       }
       pred_functions[[i]] <- learn(pred_functions[[i-1]]$CVs, y,
                                    views=condense(views, level=i), type=type,
-                                   alpha1 = alphas[i], seed=seeds[i], progress=progress, parallel=parallel, ...)
+                                   alpha1 = alphas[i], ll1=ll[1], seed=seeds[i],
+                                   progress=progress, parallel=parallel, ...)
     }
   }
 
@@ -77,7 +80,7 @@ MVS <- function(x, y, views, type="StaPLR", levels=2, alphas=c(0,1), parallel=FA
 
   pred_functions[[ncol(views)+1]] <- learn(pred_functions[[ncol(views)]]$CVs, y,
                                            views=rep(1,ncol(pred_functions[[ncol(views)]]$CVs)),
-                                           type=type, alpha1 = alphas[ncol(views)+1], ll1=0,
+                                           type=type, alpha1 = alphas[ncol(views)+1], ll1=ll[ncol(views)+1],
                                            generate.CVs=FALSE, seed=seeds[ncol(views)+1],
                                            progress=progress, parallel=parallel, ...)
 
@@ -118,7 +121,7 @@ MVS <- function(x, y, views, type="StaPLR", levels=2, alphas=c(0,1), parallel=FA
 #' p <- 1 /(1 + exp(-eta))
 #' y <- rbinom(n, 1, p)
 #'
-#' fit <- MVS(x=X, y=y, views=views, type="StaPLR", levels=3, alphas=c(0,0,1))
+#' fit <- MVS(x=X, y=y, views=views, type="StaPLR", levels=3, alphas=c(0,1,1), nnc=c(0,1,1))
 #' coefficients <- coef(fit)
 #'
 #' new_X <- matrix(rnorm(2*85), nrow=2)
@@ -170,7 +173,7 @@ predict.MVS <- function(object, newx, predtype = "response", cvlambda = "lambda.
 #' p <- 1 /(1 + exp(-eta))
 #' y <- rbinom(n, 1, p)
 #'
-#' fit <- MVS(x=X, y=y, views=views, type="StaPLR", levels=3, alphas=c(0,0,1))
+#' fit <- MVS(x=X, y=y, views=views, type="StaPLR", levels=3, alphas=c(0,1,1), nnc=c(0,1,1))
 #' coefficients <- coef(fit)
 #'
 #' new_X <- matrix(rnorm(2*85), nrow=2)
