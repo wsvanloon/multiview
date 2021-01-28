@@ -31,6 +31,24 @@
 #' @import foreach
 #' @export
 #' @author Wouter van Loon <w.s.van.loon@fsw.leidenuniv.nl>
+#' @examples
+#' set.seed(012)
+#' n <- 1000
+#' X <- matrix(rnorm(8500), nrow=n, ncol=85)
+#' top_level <- c(rep(1,45), rep(2,20), rep(3,20))
+#' bottom_level <- c(rep(1:3, each=15), rep(4:5, each=10), rep(6:9, each=5))
+#' views <- cbind(bottom_level, top_level)
+#' beta <- c(rep(10, 55), rep(0, 30))
+#' eta <- test_X %*% beta
+#' p <- 1 /(1 + exp(-eta))
+#' y <- rbinom(n, 1, p)
+#'
+#' fit <- MVS(x=X, y=y, views=views, type="StaPLR", levels=3, alphas=c(0,0,1))
+#' coefficients <- coef(fit)
+#' print(coefficients$'Level 3')
+#'
+#' new_X <- matrix(rnorm(2*85), nrow=2)
+#' predict(fit, new_X)
 
 MVS <- function(x, y, views, type="StaPLR", levels=2, alphas=c(0,1), parallel=FALSE, seeds=NULL, progress=TRUE, ...){
 
@@ -138,6 +156,7 @@ coef.MVS <- function(object, cvlambda = "lambda.min"){
       out[[i]][[j]] <- coef(object[[i]]$models[[j]], s=cvlambda)
     }
   }
+  names(out) <- paste("Level", 1:length(object))
   attr(out, "type") <- attr(object, "type")
   class(out) <- "MVScoef"
 
