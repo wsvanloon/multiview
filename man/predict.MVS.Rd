@@ -22,7 +22,7 @@ A matrix of predictions.
 Make predictions from a "MVS" object.
 }
 \examples{
-set.seed(123)
+set.seed(012)
 n <- 1000
 X <- matrix(rnorm(8500), nrow=n, ncol=85)
 top_level <- c(rep(1,45), rep(2,20), rep(3,20))

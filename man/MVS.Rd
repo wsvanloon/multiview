@@ -48,7 +48,7 @@ An object of S3 class "MVS".
 Fit a multi-view stacking model with two or more levels.
 }
 \examples{
-set.seed(123)
+set.seed(012)
 n <- 1000
 X <- matrix(rnorm(8500), nrow=n, ncol=85)
 top_level <- c(rep(1,45), rep(2,20), rep(3,20))

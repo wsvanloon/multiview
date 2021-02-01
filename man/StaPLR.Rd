@@ -12,7 +12,7 @@ StaPLR(
   correct.for = NULL,
   alpha1 = 0,
   alpha2 = 1,
-  nfolds = 5,
+  nfolds = 10,
   seed = NULL,
   std.base = FALSE,
   std.meta = FALSE,
