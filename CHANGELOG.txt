@@ -8,4 +8,6 @@ Februari 4, 2021 - Version 0.3.0
 - StaPLR output no longer contains the original training data.
 - The default number of folds for StaPLR is now 10 (was 5)
 - The default value of lambda.ratio is now 1e-04 (was 0.01).
+- By default, StaPLR no longer checks the version of glmnet, nor does it make suggestions on which version to use. If desired, the version check can still be enabled by using StaPLR(..., skip.version=TRUE).
 - The R project file has been removed and is no longer tracked in the repository.
+

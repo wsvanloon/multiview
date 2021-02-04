@@ -74,7 +74,7 @@
 StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0, alpha2 = 1, nfolds = 10, seed = NULL,
                       std.base = FALSE, std.meta = FALSE, ll1 = -Inf, ul1 = Inf,
                       ll2 = 0, ul2 = Inf, cvloss = "deviance", metadat = "response", cvlambda = "lambda.min",
-                      cvparallel = FALSE, lambda.ratio = 1e-4, penalty.weights = NULL, parallel = FALSE, skip.fdev = FALSE, skip.version = FALSE, skip.meta = FALSE, skip.cv = FALSE, progress = TRUE){
+                      cvparallel = FALSE, lambda.ratio = 1e-4, penalty.weights = NULL, parallel = FALSE, skip.fdev = FALSE, skip.version = TRUE, skip.meta = FALSE, skip.cv = FALSE, progress = TRUE){
 
   # Check if glmnet.control parameter fdev is set to zero.
   if(skip.fdev == FALSE){
@@ -86,10 +86,8 @@ StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0
 
   # Check current version of glmnet
   if(skip.version == FALSE){
-    if(packageVersion("glmnet") != '1.9.8'){
-      versionMessage <- paste0("Found glmnet version ", packageVersion("glmnet"), ". The recommended version of glmnet is 1.9-8. \n Package versions >= 2.0-1 are less stable than 1.9-8 due to a change in the cross-validation procedure. \n Because of this change, results may differ between versions 1.9-8 and >= 2.0-1. \n If you want to install glmnet 1.9-8 from source use e.g.: devtools::install_version(\"glmnet\", version=\"1.9-8\"). \n To skip this check use: StaPLR(..., skip.version=TRUE). \n")
-      message(versionMessage)
-    }
+    versionMessage <- paste0("Found glmnet version ", packageVersion("glmnet"), ".\n To skip this check use: StaPLR(..., skip.version=TRUE). \n")
+    message(versionMessage)
   }
 
   # object initialization

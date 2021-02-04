@@ -28,7 +28,7 @@ StaPLR(
   penalty.weights = NULL,
   parallel = FALSE,
   skip.fdev = FALSE,
-  skip.version = FALSE,
+  skip.version = TRUE,
   skip.meta = FALSE,
   skip.cv = FALSE,
   progress = TRUE
