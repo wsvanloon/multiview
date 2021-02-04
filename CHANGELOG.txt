@@ -1,0 +1,11 @@
+Februari 4, 2021 - Version 0.3.0
+- multiview is now licenced under GNU GPLv2
+- Added a new function MVS() which provides a more modular approach to multi-view stacking.
+- MVS() allows the application of StaPLR with more than 2 levels.
+- MVS() outputs objects of S3 class MVS which have associated coef() and predict() methods.
+- Added an option to StaPLR to skip training the meta-learner. The meta-learner is automatically skipped when only one view is provided.
+- Added an option to StaPLR to skip the generation of cross-validated predictions.
+- StaPLR output no longer contains the original training data.
+- The default number of folds for StaPLR is now 10 (was 5)
+- The default value of lambda.ratio is now 1e-04 (was 0.01).
+- The R project file has been removed and is no longer tracked in the repository.

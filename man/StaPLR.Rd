@@ -24,7 +24,7 @@ StaPLR(
   metadat = "response",
   cvlambda = "lambda.min",
   cvparallel = FALSE,
-  lambda.ratio = 0.01,
+  lambda.ratio = 1e-04,
   penalty.weights = NULL,
   parallel = FALSE,
   skip.fdev = FALSE,

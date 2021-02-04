@@ -74,7 +74,7 @@
 StaPLR <- function(x, y, view, view.names = NULL, correct.for = NULL, alpha1 = 0, alpha2 = 1, nfolds = 10, seed = NULL,
                       std.base = FALSE, std.meta = FALSE, ll1 = -Inf, ul1 = Inf,
                       ll2 = 0, ul2 = Inf, cvloss = "deviance", metadat = "response", cvlambda = "lambda.min",
-                      cvparallel = FALSE, lambda.ratio = 0.01, penalty.weights = NULL, parallel = FALSE, skip.fdev = FALSE, skip.version = FALSE, skip.meta = FALSE, skip.cv = FALSE, progress = TRUE){
+                      cvparallel = FALSE, lambda.ratio = 1e-4, penalty.weights = NULL, parallel = FALSE, skip.fdev = FALSE, skip.version = FALSE, skip.meta = FALSE, skip.cv = FALSE, progress = TRUE){
 
   # Check if glmnet.control parameter fdev is set to zero.
   if(skip.fdev == FALSE){
