@@ -54,7 +54,7 @@ X <- matrix(rnorm(8500), nrow=n, ncol=85)
 top_level <- c(rep(1,45), rep(2,20), rep(3,20))
 bottom_level <- c(rep(1:3, each=15), rep(4:5, each=10), rep(6:9, each=5))
 views <- cbind(bottom_level, top_level)
-beta <- c(rep(10, 55), rep(0, 30))
+beta <- c(rep(10, 55), rep(0, 30)) * ((rbinom(85, 1, 0.5)*2)-1)
 eta <- X \%*\% beta
 p <- 1 /(1 + exp(-eta))
 y <- rbinom(n, 1, p)

@@ -39,7 +39,7 @@
 #' top_level <- c(rep(1,45), rep(2,20), rep(3,20))
 #' bottom_level <- c(rep(1:3, each=15), rep(4:5, each=10), rep(6:9, each=5))
 #' views <- cbind(bottom_level, top_level)
-#' beta <- c(rep(10, 55), rep(0, 30))
+#' beta <- c(rep(10, 55), rep(0, 30)) * ((rbinom(85, 1, 0.5)*2)-1)
 #' eta <- X %*% beta
 #' p <- 1 /(1 + exp(-eta))
 #' y <- rbinom(n, 1, p)
@@ -69,7 +69,7 @@ MVS <- function(x, y, views, type="StaPLR", levels=2, alphas=c(0,1), nnc=c(0,1),
       }
       pred_functions[[i]] <- learn(pred_functions[[i-1]]$CVs, y,
                                    views=condense(views, level=i), type=type,
-                                   alpha1 = alphas[i], ll1=ll[1], seed=seeds[i],
+                                   alpha1 = alphas[i], ll1=ll[i], seed=seeds[i],
                                    progress=progress, parallel=parallel, ...)
     }
   }
@@ -116,7 +116,7 @@ MVS <- function(x, y, views, type="StaPLR", levels=2, alphas=c(0,1), nnc=c(0,1),
 #' top_level <- c(rep(1,45), rep(2,20), rep(3,20))
 #' bottom_level <- c(rep(1:3, each=15), rep(4:5, each=10), rep(6:9, each=5))
 #' views <- cbind(bottom_level, top_level)
-#' beta <- c(rep(10, 55), rep(0, 30))
+#' beta <- c(rep(10, 55), rep(0, 30)) * ((rbinom(85, 1, 0.5)*2)-1)
 #' eta <- X %*% beta
 #' p <- 1 /(1 + exp(-eta))
 #' y <- rbinom(n, 1, p)
@@ -168,7 +168,7 @@ predict.MVS <- function(object, newx, predtype = "response", cvlambda = "lambda.
 #' top_level <- c(rep(1,45), rep(2,20), rep(3,20))
 #' bottom_level <- c(rep(1:3, each=15), rep(4:5, each=10), rep(6:9, each=5))
 #' views <- cbind(bottom_level, top_level)
-#' beta <- c(rep(10, 55), rep(0, 30))
+#' beta <- c(rep(10, 55), rep(0, 30)) * ((rbinom(85, 1, 0.5)*2)-1)
 #' eta <- X %*% beta
 #' p <- 1 /(1 + exp(-eta))
 #' y <- rbinom(n, 1, p)

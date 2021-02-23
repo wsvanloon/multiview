@@ -1,4 +1,8 @@
-Februari 4, 2021 - Version 0.3.0
+February 23, 2021 - Version 0.3.1
+- MVS() now correctly applies nonnegativity constraints at the intermediate level(s) if specified.
+- The MVS() example has been modified slightly.
+
+February 4, 2021 - Version 0.3.0
 - multiview is now licenced under GNU GPLv2
 - Added a new function MVS() which provides a more modular approach to multi-view stacking.
 - MVS() allows the application of StaPLR with more than 2 levels.
